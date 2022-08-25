@@ -16,9 +16,13 @@ public class UserController {
 
     @PostMapping
     GenericResponse createUser(@RequestBody User user) {
+        if (user.getUsername() == null )
+            throw new Exception("O username não pode ser nulo");
         userService.save(user);
 
         return new GenericResponse("Registro salvo");
     }
+
+
 
 }
