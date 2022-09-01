@@ -1,9 +1,19 @@
 package br.edu.utfpr.pb.pw25s.server.controller;
 
+import br.edu.utfpr.pb.pw25s.server.error.ApiError;
 import br.edu.utfpr.pb.pw25s.server.model.User;
 import br.edu.utfpr.pb.pw25s.server.service.UserService;
 import br.edu.utfpr.pb.pw25s.server.utils.GenericResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("users")
@@ -15,12 +25,29 @@ public class UserController {
     }
 
     @PostMapping
-    GenericResponse createUser(@RequestBody User user) {
-        //if (user.getUsername() == null )
-        //    throw new Exception("O username não pode ser nulo");
+    GenericResponse createUser(@RequestBody @Valid User user) {
+
         userService.save(user);
 
         return new GenericResponse("Registro salvo");
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    private ApiError handlerValidationException(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request) {
+
+        BindingResult result = exception.getBindingResult();
+        Map<String, String> validationErrors = new HashMap<>();
+        for (FieldError fieldError: result.getFieldErrors()) {
+            validationErrors.put(
+                    fieldError.getField(),
+                    fieldError.getDefaultMessage());
+        }
+
+        return new ApiError(400, "validation error",
+                request.getServletPath(), validationErrors);
     }
 
 

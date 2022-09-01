@@ -1,5 +1,6 @@
 package br.edu.utfpr.pb.pw25s.server;
 
+import br.edu.utfpr.pb.pw25s.server.error.ApiError;
 import br.edu.utfpr.pb.pw25s.server.model.User;
 import br.edu.utfpr.pb.pw25s.server.repository.UserRepository;
 import br.edu.utfpr.pb.pw25s.server.utils.GenericResponse;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,10 +77,68 @@ public class UserControllerTest {
     @Test
     public void postUser_whenUserHasNullUsername_receiveBadRequest() {
         User user = createValidUser();
-        user.setUsername("");
+        user.setUsername(null);
         ResponseEntity<Object> response =
                 testRestTemplate.postForEntity("/users", user, Object.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void postUser_whenUserHasNullPassword_receiveBadRequest() {
+        User user = createValidUser();
+        user.setPassword(null);
+        ResponseEntity<Object> response =
+                testRestTemplate.postForEntity("/users", user, Object.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void postUser_whenUserWithSizeLessThanRequired_receiveBadRequest() {
+        User user = createValidUser();
+        user.setUsername("abc");
+        ResponseEntity<Object> response =
+                testRestTemplate.postForEntity("/users", user, Object.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void postUser_whenUsernameSizeExceedsLengthLimit_receiveBadRequest() {
+        User user = createValidUser();
+        user.setUsername(
+                IntStream.rangeClosed(1, 256).mapToObj(x -> "x")
+                        .collect(Collectors.joining())
+        );
+        ResponseEntity<Object> response =
+                testRestTemplate.postForEntity("/users", user, Object.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void postUser_whenPasswordPatternNotMatch_receiveBadRequest() {
+        User user = createValidUser();
+        user.setPassword("password");
+        ResponseEntity<Object> response =
+                testRestTemplate.postForEntity("/users", user, Object.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void postUser_whenUserIsInvalid_receiveApiError() {
+        User user = new User();
+        ResponseEntity<ApiError> response =
+            testRestTemplate.postForEntity("/users", user, ApiError.class);
+
+        assertThat(response.getBody().getUrl()).isEqualTo("/users");
+    }
+
+    @Test
+    public void postUser_whenUserIsInvalid_receiveApiErrorWithValidationErrors() {
+        User user = new User();
+        ResponseEntity<ApiError> response =
+                testRestTemplate.postForEntity("/users", user, ApiError.class);
+
+        assertThat(response.getBody().getValidationErrors().size()
+                ).isEqualTo(3);
     }
 
     private User createValidUser() {
