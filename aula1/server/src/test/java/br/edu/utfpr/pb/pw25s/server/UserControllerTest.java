@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -140,6 +141,30 @@ public class UserControllerTest {
         assertThat(response.getBody().getValidationErrors().size()
                 ).isEqualTo(3);
     }
+
+    @Test
+    public void postUser_whenUserIsInvalid_receiveMessageOfNullUsername() {
+        User user = new User();
+        ResponseEntity<ApiError> response =
+                testRestTemplate.postForEntity("/users", user, ApiError.class);
+
+        Map<String, String> validationErrors = response.getBody().getValidationErrors();
+
+        assertThat(validationErrors.get("username"))
+                .isEqualTo("O 'usuário' não pode ser nulo");
+    }
+
+    @Test
+    public void postUser_whenAnotherUserHasSameUsername_receiveBadRequest() {
+        userRepository.save(createValidUser());
+        User user = createValidUser();
+        ResponseEntity<Object> response =
+                testRestTemplate.postForEntity("/users", user, Object.class);
+        assertThat(response.getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+
 
     private User createValidUser() {
         User user = new User();
