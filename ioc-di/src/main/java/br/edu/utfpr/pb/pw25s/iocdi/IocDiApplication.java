@@ -27,7 +27,7 @@ public class IocDiApplication {
 
 			privateField.set(test, "Test updated!");
 			System.out.println( privateField.get(test) );
-		
+
 		} catch (NoSuchFieldException e) {
 			throw new RuntimeException(e);
 		} catch (ClassNotFoundException e) {
