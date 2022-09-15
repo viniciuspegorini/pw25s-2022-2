@@ -26,30 +26,8 @@ public class UserController {
 
     @PostMapping
     GenericResponse createUser(@RequestBody @Valid User user) {
-
         userService.save(user);
-
         return new GenericResponse("Registro salvo");
     }
-
-    @ExceptionHandler({MethodArgumentNotValidException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    private ApiError handlerValidationException(
-            MethodArgumentNotValidException exception,
-            HttpServletRequest request) {
-
-        BindingResult result = exception.getBindingResult();
-        Map<String, String> validationErrors = new HashMap<>();
-        for (FieldError fieldError: result.getFieldErrors()) {
-            validationErrors.put(
-                    fieldError.getField(),
-                    fieldError.getDefaultMessage());
-        }
-
-        return new ApiError(400, "validation error",
-                request.getServletPath(), validationErrors);
-    }
-
-
 
 }
