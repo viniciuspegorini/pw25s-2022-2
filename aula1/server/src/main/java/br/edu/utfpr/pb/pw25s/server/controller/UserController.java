@@ -30,4 +30,9 @@ public class UserController {
         return new GenericResponse("Registro salvo");
     }
 
+    @GetMapping
+    String getString() {
+        return "O usuário está autenticado!";
+    }
+
 }

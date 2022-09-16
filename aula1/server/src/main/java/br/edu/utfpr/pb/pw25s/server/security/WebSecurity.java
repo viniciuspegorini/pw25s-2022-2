@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -44,14 +45,15 @@ public class WebSecurity {
                 .authorizeRequests()
                 // .antMatchers(HttpMethod.POST, "/users/**").hasAnyRole("ADMIN", "MANAGER")
                 .antMatchers(HttpMethod.POST, "/users/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/error/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .authenticationManager(authenticationManager)
                 //Filtro da Autenticação
-                .addFilter(new JWTAuthenticationFilter() )
+                .addFilter(new JWTAuthenticationFilter(authenticationManager, authService) )
                 //Filtro da Autorizaçao
-                .addFilter(new JWTAuthorizationFilter() )
-                ;
+                .addFilter(new JWTAuthorizationFilter(authenticationManager, authService) )
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
 
 
