@@ -45,7 +45,7 @@ public class WebSecurity {
                 .authorizeRequests()
                 // .antMatchers(HttpMethod.POST, "/users/**").hasAnyRole("ADMIN", "MANAGER")
                 .antMatchers(HttpMethod.POST, "/users/**").permitAll()
-                .antMatchers(HttpMethod.GET, "/error/**").permitAll()
+                .antMatchers( "/error/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .authenticationManager(authenticationManager)
