@@ -223,12 +223,12 @@ public class UsuarioControllerTest {
 Podemos testar a API via requisição HTTP fora do nosso ambiente de testes, como ainda não iniciamos a criação do cliente com React, é necessário utilizar um *software* como o Postman ou Insomnia. Antes de criar o teste no **software** é necessário fazer alguns ajustes no projeto. Primeiro será necessário criar um arquivo de configuração para que tenhamos acesso ao banco de dados que está sendo utilizado durante os testes, o H2. Dentro da pasta **/src/main/resources/** criar o arquivo **application.yml**.  Muito cuidado na **indentação** do código do aquivo **yml** pois é a maneira que ele utiliza para acessar a árvore de propriedades. As configurações servem para que sejá possível gerar um nome de banco de dados único ao executara aplicação (*jdbc:h2:mem:testdb*) e para que possa ser acessado o console do banco por meio da URL **http://localhost:8080/h2-console**.
 ```yml
 spring:
-	datasource:
-		generate-unique-name: false
-	h2:
-		console:
-			enabled: true
-			path: /h2-console
+  datasource:
+    generate-unique-name: false
+  h2:
+    console:
+	  enabled: true
+	  path: /h2-console
 ```
 
 Ao acessar a URL **http://localhost:8080/h2-console** em um navegador irá abrir a tela de conexão do **H2** a configuração está praticamente pronta, bastando alterar a URL de conexão com o banco para: **jdbc:h2:mem:testdb**. Ao clicar para realizar a conexão temos acesso ao banco de dados gerado, por enquando foi criada apenas a tabela **User**, ao clicar na tabela é habilitado o console no qual podemos realizar consultas. Ao fazer um **select * from user** e executar o comando recebemos uma tabela vazia como resultado, para adicionar um usuário no banco de dados será utilizados o Postman.
@@ -237,9 +237,9 @@ Ao acessar a URL **http://localhost:8080/h2-console** em um navegador irá abrir
 Ao abrir o Postam basta clicar em **File > New Tab** e uma nova aba para realizar requisições HTTP será aberta. No método selecionar a opção **POST** e na URL **http://localhost:8080/users**. O próximo passo é configurar o corpo da requisição com um objeto JSON representando um usuário. Clicar na aba **Body** marcar a opção **raw** e no final das opções selecionar **JSON**. Com isso é possível adicionar no corpo da requisição o objeto que representa um usuário.
 ```json
 {
-	"username" : "user-test",
-	"displayName" : "user-dispay-test",
-	"password": "P4ssword"
+  "username" : "user-test",
+  "displayName" : "user-dispay-test",
+  "password": "P4ssword"
 }
 ```
 Adicionado o **JSON** basta clicar em send e a requisição será enviada para a API, o retorno que aparece em **Response** é um **200 OK** sem nenhum outro texto, pois é assim que está o código por enquanto. Agora é possível executar novamente o **select** no banco **H2** e consultar o usuário que foi adicionado na base de dados.
@@ -267,52 +267,55 @@ A classe **GenericResponse** será criada no pacote **br.edu.utfpr.pb.web.shared
 ```java
 @Data  
 @NoArgsConstructor  
-public class GenericResponse {  
-	private String message;  
-	public GenericResponse(String message) {  
-	    this.message = message;  
-	}  
+public class GenericResponse { 
+    private String message;
+    public GenericResponse(String message) {
+        this.message = message;
+    }  
 }
 ```
 A próxima alteração de código será realizado no método **createUser()** da classe **UserController**, que agora deverá retornar um objeto do tipo **GenericResponse**. Após essa alteração o teste criado irá passar. Para visualizar o comportamento na prática a requisição pode ser realizada novamente por meio do Postman.
 
 ```java
-	\\...
-	@PostMapping  
-	GenericResponse createUser(@RequestBody User user) {  
-		userService.save(user);  
-		return new GenericResponse("Registro salvo");  
-	}
-	\\...
+    \\...
+    @PostMapping
+    GenericResponse createUser(@RequestBody User user) {
+        userService.save(user);
+        return new GenericResponse("Registro salvo");
+    }
+    \\...
 ```
+
 Com essa etapa finalizada, agora serão adicionadas algumas melhorias no código e na maneira com que os dados são persistidos. Ao fazer o **select** no banco de dados é possível observar que a coluna **password** está sendo armazenada como texto, o que não é uma boa prática. O teste a seguir irá validar se a senha salva no banco está diferente da senha que foi enviada para cadastro, o que sinaliza que ela estará criptografada no banco de dados.
 
 ```java
-	@Test
-	public void postUser_whenUserIsValid_passwordIsHashedInDatabase() {
-		User user = createValidUser();
-		testRestTemplate.postForEntity(API_USERS, user, Object.class);
-		List<User> users = userRepository.findAll();
-		User userBD = users.get(0);
-		assertThat(userBD.getPassword()).isNotEqualTo(user.getPassword());
-}
+    \\...
+    @Test 
+    public void postUser_whenUserIsValid_passwordIsHashedInDatabase() {
+        User user = createValidUser();
+        testRestTemplate.postForEntity(API_USERS, user, Object.class);
+        List<User> users = userRepository.findAll();
+        User userBD = users.get(0);
+        assertThat(userBD.getPassword()).isNotEqualTo(user.getPassword());
+    }
+    \...
 ```
 A criptografia da senha será realizada na classe **UserService** para evitar que regras de negócio da aplicação sejam implementadas na classe **controller**. Para criptografia da senha será utilizada a classe **BCryptPasswordEncoder**[6]. Ao executar o método **bCryptPasswordEncoder.encode()** a senha será criptografada antes de ser salva no banco. Ao executar o teste ele vai passar. Para visualizar na prática só executar a requisição via Postman e conferir no console do **H2**.
 
 ```java
 @Service  
-public class UserService {
-	UserRepository userRepository;  
-	BCryptPasswordEncoder bCryptPasswordEncoder;  
-  
-	public UserService(UserRepository userRepository) {  
-	    this.userRepository = userRepository;  
-		this.bCryptPasswordEncoder = new BCryptPasswordEncoder();  
-	}  
-	public User save(User user) {
-		user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()) );  
-		return userRepository.save(user);
-	}
+public class UserService { 
+    UserRepository userRepository;
+    BCryptPasswordEncoder bCryptPasswordEncoder;  
+    
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+        this.bCryptPasswordEncoder = new BCryptPasswordEncoder();
+    }
+    public User save(User user) {
+        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()) );
+        return userRepository.save(user);
+    }
 }
 ```
 Com isso finalizamos o básico do cadastro de usuário na API, agora será realizada a validação dos dados obrigatórios do usuário, pois por enquanto é possível cadastrar um usuário sem informar todos os dados, pois os mesmos não estão sem validados.
@@ -327,16 +330,16 @@ Nesse primeiro teste será validado o caso de recebimento do campo **username** 
 
 ```java
 //...
-public class UsuarioControllerTest {
-	//...
-	@Test
-	public void postUser_whenUserHasNullUsername_receiveBadRequest() {
-		User user = createValidUser();
-		user.setUsername(null);
-		ResponseEntity<Object> response = postSignUp(user, Object.class);
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-	}
-	//...
+public class UsuarioControllerTest { 
+    //...
+    @Test 
+    public void postUser_whenUserHasNullUsername_receiveBadRequest() {
+        User user = createValidUser();
+        user.setUsername(null);
+        ResponseEntity<Object> response = postSignUp(user, Object.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+    //...
 }
 ```
 Para resolver esse teste o inicialmente será adicionada a anotação **@NotNull** (importada de: import javax.validation.constraints.NotNull;) no campo **username** da classe **User**, conforme o código abaixo.
@@ -346,12 +349,13 @@ Para resolver esse teste o inicialmente será adicionada a anotação **@NotNull
 @Entity(name = "tb_user")  
 public class User {  
   
-    @Id  
-	@GeneratedValue  private long id;  
-     
-	@NotNull
-    private String username;  
-	private String displayName;  
+    @Id 
+    @GeneratedValue
+    private long id;  
+    
+    @NotNull
+    private String username;
+    private String displayName;  
     private String password;  
 }
 ```
@@ -361,51 +365,54 @@ Com a anotação feita será delegado ao controller (**UserController**) validar
 ```java
 @RestController  
 @RequestMapping("users")  
-public class UserController {  
-    private final UserService userService;  
-  
-    public UserController(UserService userService) {  
-        this.userService = userService;  
-    }  
-  
-    @PostMapping  
-	GenericResponse createUser(@RequestBody @Valid User user) {  
-        userService.save(user);  
-        return new GenericResponse("Registro salvo");  
-    }
+public class UserController {
+  private final UserService userService;
+
+  public UserController(UserService userService) {
+    this.userService = userService;
+  }
+
+  @PostMapping
+  GenericResponse createUser(@RequestBody @Valid User user) {
+    userService.save(user);
+    return new GenericResponse("Registro salvo");
+  }
+}
 ```
 
 O mesmo teste (**UserControllerTest**) será realizado para o campo **password** da classe **User**.
 
 ```java
-	@Test
-	public void postUser_whenUserHasNullPassword_receiveBadRequest() {
-		User user = createValidUser();
-		user.setPassword(null);
-		ResponseEntity<Object> response = postSignUp(user, Object.class);
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-	}
+    @Test
+    public void postUser_whenUserHasNullPassword_receiveBadRequest() {
+        User user = createValidUser();
+        user.setPassword(null);
+        ResponseEntity<Object> response = postSignUp(user, Object.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
 ```
+
 Para resolver o teste será adicionada a anotação **@NotNull** no atributo **password**. E será a única modificação necessária, pois o **@Valid** presente na classe **UserController** será responsável por todas as validações necessárias de cada atributo da classe **User**. Existem outras validações que podem ser utilizadas nos atributos das classes, para conhecê-las basta acessar a documentação do  Java Bean Validation [7]. No código abaixo algumas outras anotações foram adicionadas nos atributos da classe **User**.
 ```java
 @Data  
 @Entity(name = "tb_user")  
 public class User {  
   
-    @Id  
-	@GeneratedValue  private long id;  
-     
-	@NotNull
-	@Size(min = 4, max = 255)  // valida para que o campo tenha entre 4 e 255 caracteres
-	private String username;  
-	  
-	@NotNull  
-	private String displayName;  
-	  
-	@NotNull  
-	@Size(min = 6, max = 254)  
-	@Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$")   //valida para que o campo tenha pelo menos 1 letra maiúscula, 1 letra minúscula e 1 número.
-	private String password; 
+    @Id 
+    @GeneratedValue  
+    private long id;  
+    
+    @NotNull 
+    @Size(min = 4, max = 255)  // valida para que o campo tenha entre 4 e 255 caracteres
+    private String username;  
+    
+    @NotNull 
+    private String displayName;  
+    
+    @NotNull 
+    @Size(min = 6, max = 254) 
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$")   //valida para que o campo tenha pelo menos 1 letra maiúscula, 1 letra minúscula e 1 número.
+    private String password; 
 }
 ```
 
@@ -446,11 +453,11 @@ public class WebSecurity {
         this.authenticationEntryPoint = authenticationEntryPoint;  
     }  
   
-    @Bean  
-	@SneakyThrows
-	public SecurityFilterChain filterChain(HttpSecurity http) {  
-		// authenticationManager -> responsável por gerenciar a autenticação dos usuários  
-		AuthenticationManagerBuilder authenticationManagerBuilder =  
+    @Bean 
+    @SneakyThrows 
+    public SecurityFilterChain filterChain(HttpSecurity http) {
+        // authenticationManager -> responsável por gerenciar a autenticação dos usuários  
+        AuthenticationManagerBuilder authenticationManagerBuilder =  
                 http.getSharedObject(AuthenticationManagerBuilder.class);  
         authenticationManagerBuilder.userDetailsService(authService)  
                 .passwordEncoder( passwordEncoder() );  
@@ -468,15 +475,16 @@ public class WebSecurity {
                 .and()  
                 .authenticationManager(authenticationManager)  
                 //Filtro da Autenticação - sobrescreve o método padrão do Spring Security para Autenticação.
-  .addFilter(new JWTAuthenticationFilter(authenticationManager, authService) )  
+                .addFilter(new JWTAuthenticationFilter(authenticationManager, authService) )  
                 //Filtro da Autorização - - sobrescreve o método padrão do Spring Security para Autorização.  
-  .addFilter(new JWTAuthorizationFilter(authenticationManager, authService) )  
+                .addFilter(new JWTAuthorizationFilter(authenticationManager, authService) )  
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);  //Como será criada uma API REST e todas as requisições que necessitam de autenticação/autorização serão realizadas com o envio do token JWT do usuário, não será necessário fazer controle de sessão no *back-end*.
         return http.build();  
-    }  
-  
-    @Bean // Criação do objeto utilizado na criptografia da senha, ele é usado no UserService ao cadastrar um usuário e pelo authenticationManagerBean para autenticar um usuário no sistema. 
-	public PasswordEncoder passwordEncoder() {  
+    }
+    
+    // Criação do objeto utilizado na criptografia da senha, ele é usado no UserService ao cadastrar um usuário e pelo authenticationManagerBean para autenticar um usuário no sistema.
+    @Bean 
+    public PasswordEncoder passwordEncoder() {  
         return new BCryptPasswordEncoder();  
     }  
 }
@@ -586,20 +594,20 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
   
     @Override 
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {  
-        try {  
-	        //Obtem os dados de username e password utilizando o ObjectMapper para converter o JSON
-	        //em um objeto user com esses dados.
+        try {   
+            //Obtem os dados de username e password utilizando o ObjectMapper para converter o JSON
+            //em um objeto User com esses dados.
             User credentials = new ObjectMapper().readValue(request.getInputStream(), User.class);  
             //Verifica se o usuário existe no banco de dados, caso não exista uma Exception será disparada
             //e o código será parado de executar nessa parte e o usuário irá receber uma resposta
             //com falha na autenticação (classe: EntryPointUnauthorizedHandler)             
             User user = (User) authService.loadUserByUsername(credentials.getUsername());  
-  
-			//Caso o usuário seja encontrado, o objeto authenticationManager encarrega-se de autenticá-lo.
-			//Como o authenticationManager foi configurado na classe WebSecurity e foi informado o método
-			//de criptografia da senha, a senha informada durante a autenticação é criptografada e
-			//comparada com a sennha armazenada no banco. Caso não esteja correta uma Exception será disparada
-			//Caso ocorra sucesso será chamado o método: successfulAuthentication dessa classe
+            
+            //Caso o usuário seja encontrado, o objeto authenticationManager encarrega-se de autenticá-lo.
+            //Como o authenticationManager foi configurado na classe WebSecurity e foi informado o método
+            //de criptografia da senha, a senha informada durante a autenticação é criptografada e
+            //comparada com a sennha armazenada no banco. Caso não esteja correta uma Exception será disparada
+            //Caso ocorra sucesso será chamado o método: successfulAuthentication dessa classe
             return authenticationManager.authenticate(  
                     new UsernamePasswordAuthenticationToken(  
                             credentials.getUsername(),  
@@ -632,7 +640,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 ```
 Abaixo está o JSON que deverá ser enviado via **HTTP POST** para URL **/login** para autenticar-se na aplicação.
 ```json
-	{"username":"user","password":"P4ssword"}
+{"username":"user","password":"P4ssword"}
 ```
 Abaixo está a resposta ao cliente após a autenticação realizada com sucesso.
 
