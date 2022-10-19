@@ -47,6 +47,14 @@ public class WebSecurity {
 
                 .antMatchers(HttpMethod.POST, "/users/**").permitAll()
                 .antMatchers( "/error/**").permitAll()
+
+                .antMatchers("/h2-console/**",
+                        "/swagger-resources/**",
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v2/api-docs",
+                        "/webjars/**").permitAll()
+
                 .anyRequest().authenticated()
                 .and()
                 .authenticationManager(authenticationManager)

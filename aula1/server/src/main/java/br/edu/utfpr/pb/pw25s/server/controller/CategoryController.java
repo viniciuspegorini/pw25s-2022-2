@@ -1,8 +1,12 @@
 package br.edu.utfpr.pb.pw25s.server.controller;
 
 import br.edu.utfpr.pb.pw25s.server.dto.CategoryDto;
+import br.edu.utfpr.pb.pw25s.server.dto.ProductDto;
 import br.edu.utfpr.pb.pw25s.server.model.Category;
+import br.edu.utfpr.pb.pw25s.server.model.Product;
 import br.edu.utfpr.pb.pw25s.server.service.CategoryService;
+import br.edu.utfpr.pb.pw25s.server.service.CrudService;
+import br.edu.utfpr.pb.pw25s.server.service.ProductService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -20,90 +24,26 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("categories")
-public class CategoryController {
+public class CategoryController extends CrudController<Category, CategoryDto, Long> {
 
     private final CategoryService categoryService;
-    private ModelMapper modelMapper;
+    private final ModelMapper modelMapper;
 
-    public CategoryController(CategoryService categoryService,
-                              ModelMapper modelMapper) {
+
+    public CategoryController(CategoryService categoryService, ModelMapper modelMapper) {
+        super(Category.class, CategoryDto.class);
         this.categoryService = categoryService;
         this.modelMapper = modelMapper;
     }
 
-    @PostMapping
-    public ResponseEntity<CategoryDto> save(@RequestBody @Valid CategoryDto categoryDto) {
-        Category category = categoryService.save(
-                convertDtoToEntity(categoryDto));
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(category.getId()).toUri();
-
-        return ResponseEntity.created(location).body(convertEntityToDto(category));
+    @Override
+    protected CrudService<Category, Long> getService() {
+        return this.categoryService;
     }
 
-    @GetMapping("{id}") // http://localhost:8080/categories/1
-    public ResponseEntity<CategoryDto> findOne(@PathVariable Long id) {
-        return ResponseEntity.ok(convertEntityToDto(categoryService.findOne(id)));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<CategoryDto>> findAll() {
-        return ResponseEntity.ok(
-                categoryService.findAll().stream()
-                        .map(this::convertEntityToDto)
-                        .collect(Collectors.toList())
-        );
-    }
-
-    @GetMapping("page")
-    public ResponseEntity<Page<CategoryDto>> findAllPaged(@RequestParam int page,
-                                                          @RequestParam int size,
-                                                          @RequestParam(required = false) String order,
-                                                          @RequestParam(required = false) Boolean asc) {
-        PageRequest pageRequest = PageRequest.of(page, size);
-        if (order != null && asc != null) {
-            pageRequest = PageRequest.of(page, size,
-                    asc ? Sort.Direction.ASC : Sort.Direction.DESC, order);
-        }
-        return ResponseEntity.ok(
-                categoryService.findAll(pageRequest).map(
-                        this::convertEntityToDto) );
-
-    }
-
-    @PutMapping
-    public ResponseEntity<CategoryDto> update(@RequestBody @Valid CategoryDto categoryDto) {
-        Category category = categoryService.save(
-                convertDtoToEntity(categoryDto));
-        return ResponseEntity.ok(convertEntityToDto(category));
-    }
-
-    @GetMapping("count")
-    public ResponseEntity<Long> count() {
-        return ResponseEntity.ok( categoryService.count() );
-    }
-
-    @GetMapping("exists/{id}")
-    public ResponseEntity<Boolean> exists(@PathVariable Long id) {
-        return ResponseEntity.ok( categoryService.exists(id) );
-    }
-
-    @DeleteMapping("{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        categoryService.delete(id);
-    }
-
-
-
-
-    private Category convertDtoToEntity(CategoryDto categoryDto) {
-        return modelMapper.map(categoryDto, Category.class);
-    }
-
-    private CategoryDto convertEntityToDto(Category category) {
-        return modelMapper.map(category, CategoryDto.class);
+    @Override
+    protected ModelMapper getModelMapper() {
+        return this.modelMapper;
     }
 
 }

@@ -39,9 +39,7 @@ REST não é uma arquitetura ou *framework* pronto, é apenas um contjunto de re
 # Iniciando o projeto
 Durante as aulas será desenvolvido um projeto para controle de compra e venda de produtos. Vamos iniciar com o cadastro de usuários do sistema, tanto a API Rest quanto o cliente utilizando React. Então será realizada a etapa de autenticação dos usuários do sistema. Na sequência serão realizados os CRUDs de categoria, produto e compras.
 
-### Iniciando o desenvolvimento
-
-#### Criação do projeto back-end
+### Criação do projeto
 O projeto será criado utilizando como base o *framework* Spring Boot, que por sua vez permite que projetos com o Spring MVC, Data JPA e Security já venham configurados por meio de convenções.
 Será criado um projeto [Maven](https://maven.apache.org/) por meio da ferramenta web [Spring Initializr](https://start.spring.io/) com as seguintes configurações:
 O projeto será do tipo **Maven Project**.
@@ -51,8 +49,8 @@ Os metadados do projeto são:
 - Group: **br.edu.utfpr.pb.web**
 - Artifact: **server**
 - Options:
-    - Packaging: **Jar**
-    - Java: **11** ou superior (utilizar a versão instalada na máquina, preferência pela mais atual).
+  - Packaging: **Jar**
+  - Java: **11** ou superior (utilizar a versão instalada na máquina, preferência pela mais atual).
 
 Em dependências devem ser selecionados os *frameworks*:
 - Spring Data JPA
@@ -65,7 +63,7 @@ Em dependências devem ser selecionados os *frameworks*:
 
 O projeto está configurado e pode ser realizado o download do mesmo e importado na IDE. O conteúdo do arquivo `pom.xml` pode ser visualizado em: [arquivo pom.xml](https://github.com/viniciuspegorini/pw25s-2022-2/blob/main/aula1/server/pom.xml).
 
-#### Estrutura do projeto back-end
+### Estrutura do projeto back-end
 
 O projeto Spring Boot vêm com uma série de configurações inicias que não precisamos nos preocupar, iniciando com a classe principal da aplicação a **ServerApplication**, nela por meio da anotação **@SpringBootApplication** todas as configurações serão carregadas. O **Spring Security** por exemplo, já vem pré-configurado protegendo todas as URLs, como ainda não vamos configurar, é necesário adicionar a propriedade **exclude = SecurityAutoConfiguration.class**, dessa maneira o **SpringBoot** vai ignorar as configurações de segurança, na sequência do desenvolvimento essa configuração será alterada para o processo de autenticação e autorização funcionar. O banco de dados em memória utilizando o **H2** também já é criado por padrão nesse momento, ou seja, todas as configurações necessárias para o início do desenvolvimento estão prontas.
 
@@ -80,7 +78,7 @@ public class ServerApplication {
 Com as configurações básicas definidas será possível iniciar o desenvolvimento do projeto.
 
 
-#### Cadastro de Usuário (back-end)
+### Cadastro de Usuário (back-end)
 
 O desenvolvimento irá iniciar o cadastro de usuário o primeiro passo será criar o cadastro de um novo usuário. Para isso devemos criar nosso controller, entretanto como o desenvolvimento será realizado por meio de TDD, a primeira classe que vamos criar será a classe **UserControllerTest** dentro da pasta **/src/test**.
 ```java
@@ -208,6 +206,7 @@ public class UserController {
 }
 ```
 Para evitar problemas durante a execução dos testes é importante limpar o banco de dados a cada execução, para isso vamos criar um método que remove os registros do banco a cada execução.
+
 ``` java
 //...
 public class UsuarioControllerTest {
@@ -220,6 +219,7 @@ public class UsuarioControllerTest {
 	//...
 }
 ```
+
 Podemos testar a API via requisição HTTP fora do nosso ambiente de testes, como ainda não iniciamos a criação do cliente com React, é necessário utilizar um *software* como o Postman ou Insomnia. Antes de criar o teste no **software** é necessário fazer alguns ajustes no projeto. Primeiro será necessário criar um arquivo de configuração para que tenhamos acesso ao banco de dados que está sendo utilizado durante os testes, o H2. Dentro da pasta **/src/main/resources/** criar o arquivo **application.yml**.  Muito cuidado na **indentação** do código do aquivo **yml** pois é a maneira que ele utiliza para acessar a árvore de propriedades. As configurações servem para que sejá possível gerar um nome de banco de dados único ao executara aplicação (*jdbc:h2:mem:testdb*) e para que possa ser acessado o console do banco por meio da URL **http://localhost:8080/h2-console**.
 ```yml
 spring:
@@ -233,7 +233,7 @@ spring:
 
 Ao acessar a URL **http://localhost:8080/h2-console** em um navegador irá abrir a tela de conexão do **H2** a configuração está praticamente pronta, bastando alterar a URL de conexão com o banco para: **jdbc:h2:mem:testdb**. Ao clicar para realizar a conexão temos acesso ao banco de dados gerado, por enquando foi criada apenas a tabela **User**, ao clicar na tabela é habilitado o console no qual podemos realizar consultas. Ao fazer um **select * from user** e executar o comando recebemos uma tabela vazia como resultado, para adicionar um usuário no banco de dados será utilizados o Postman.
 
-#### Realizando uma requisição HTTP POST por meio do Postman
+### Realizando uma requisição HTTP POST por meio do Postman
 Ao abrir o Postam basta clicar em **File > New Tab** e uma nova aba para realizar requisições HTTP será aberta. No método selecionar a opção **POST** e na URL **http://localhost:8080/users**. O próximo passo é configurar o corpo da requisição com um objeto JSON representando um usuário. Clicar na aba **Body** marcar a opção **raw** e no final das opções selecionar **JSON**. Com isso é possível adicionar no corpo da requisição o objeto que representa um usuário.
 ```json
 {
@@ -244,7 +244,7 @@ Ao abrir o Postam basta clicar em **File > New Tab** e uma nova aba para realiza
 ```
 Adicionado o **JSON** basta clicar em send e a requisição será enviada para a API, o retorno que aparece em **Response** é um **200 OK** sem nenhum outro texto, pois é assim que está o código por enquanto. Agora é possível executar novamente o **select** no banco **H2** e consultar o usuário que foi adicionado na base de dados.
 
-#### Continuando o desenvolvimento da API
+### Continuando o desenvolvimento da API
 No próximo teste será retornado ao cliente que chama a API além do **status HTTP**, uma mensagem de sucesso. A mensagem irá retornar por meio de um objeto do tipo **GenericResponse**.
 
 ```java
@@ -317,7 +317,7 @@ public class UserService {
 ```
 Com isso finalizamos o básico do cadastro de usuário na API, agora será realizada a validação dos dados obrigatórios do usuário, pois por enquanto é possível cadastrar um usuário sem informar todos os dados, pois os mesmos não estão sem validados.
 
-#### Validando os dados de cadastro do usuário
+### Validando os dados de cadastro do usuário
 
 Para realizar a validação dos dados obrigatórios das entidade na API, será utilizado Java Bean Validation [7], utilizando os validadores padrão, também serão criados validadores customizados e por fim, será tratada da internacionalização das mensagens de erro.
 
@@ -351,9 +351,7 @@ public class User {
      
 	@NotNull
     private String username;  
-  
 	private String displayName;  
-
     private String password;  
 }
 ```
@@ -411,9 +409,17 @@ public class User {
 }
 ```
 
-#### Adicionando Autenticação e Autorização com Spring Security
+### Adicionando Autenticação e Autorização com Spring Security
 
-O conteúdo abordado na sequência é o conceito de autenticação e autorização com o *framework* **Spring Security**[8]. Neste projeto será criado um arquivo de configuração para sobrescrever alguns comportamentos padrão do **Spring Security**. A classe **User** será utilizada para criar os objetos dos usuários que poderão se autenticar na API.
+O conteúdo abordado na sequência é o conceito de autenticação e autorização com o *framework* **Spring Security**[8]. Neste projeto será criado um arquivo de configuração para sobrescrever alguns comportamentos padrão do **Spring Security**. A classe **User** será utilizada para criar os objetos dos usuários que poderão se autenticar na API. E a interface **UserRepository** será utilizada para criar a consulta que irá retornar o usuário do banco de dados.
+
+Além disso, foram criadas dentro dos pacotes **security** e **service** as demais classes utilizadas na configuração do Spring Security:
+- **AuthenticationResponse**: classe utilizada para definir o objeto de retorno com o token criado ao finalizar a autenticação.
+- **EntryPointUnauthorizedHandler**:  classe utilizada para definir o tipo de resposta ao cliente quando ocorrer um erro no processo de autenticação.
+- **JWTAuthenticationFilter**: classe utilizada durante o processo de autenticação de usuário.
+- **JWTAuthorizationFilter**: classe utilizada durante o processo de autorização de um usuário já autenticado.
+- **SecurityConstants**: classe contendo as constantes utilizadas pelas classes de configuração do Spring Security.
+- **WebSecurity**: classe em que serão realizadas todas as configurações do Spring Security.
 
 O primeiro passo a ser realizado para o **Spring Security** funcionar é retirar o trecho de código *exclude = SecurityAutoConfiguration.class* da classe **ServerApplication**, pois agora é necessário que o Spring traga algumas configurações já definidas no projeto. Por padrão, ao retirar essa configuração o **Spring Security** volta a funcionar na aplicação e todas as rotas da API passam a necessitar de autenticação. Ou seja nesse momento os testes vão parar de funcionar e, ao tentar fazer uma requisição **HTTP POST** para a url **/users** da API o retorno será um código **HTTP** **403 FORBIDEN**, mesmo todos os campos estando corretos, pois o Spring está validando o acesso às rotas.
 
@@ -425,7 +431,7 @@ public class ServerApplication {
   }   
 }
 ``` 
-Para configurar o **Spring Security** será criada a classe **Web Security** no pacote **br.edu.utfpr.pb.pw25s.server.security**. Nessa classe serão sobrescritas as configurações padrão do Spring Security, por isso ela recebe a anotação **@EnableWebSecurity** e como serão criados objetos compartilhados a anotação **@Configuration**.
+Para configurar o **Spring Security** será criada a classe **Web Security** no pacote **br.edu.utfpr.pb.pw25s.server.security**. Nessa classe serão sobrescritas as configurações padrão do Spring Security, por isso ela recebe a anotação **@EnableWebSecurity** e como serão criados objetos compartilhados a anotação **@Configuration**. O objeto **authService** será explicado na sequência do texto e é utilizado para buscar um usuário no banco.  O objeto **authenticationEntryPoint** é responsável por realizar o tratamento de exceção quando o usuário informar credenciais incorretas ao autenticar-se. O método **filterChain()** retorna um objeto do tipo **SecurityFilterChain**, nesse método serão sobrescritas algumas configurações padrão do Spring, pelas configurações utilizadas neste projeto. Essas configurações serão alteradas por meio do objeto **http** instanciado de **HttpSecurity**, nele podem ser alteados os objetos de tratamento de erro, quais rotas da aplicação serão autenticadas/autorizadas, as rotas para autenticação, controle do tipo de sessão e no caso desse projeto os filtros utilizados na Autenticação (**authenticationManager**) e autorização dos usuários (**authorizationManager**), conforme pode ser observado nos comentários do código abaixo.
 
 ```java
 @EnableWebSecurity  
@@ -440,11 +446,10 @@ public class WebSecurity {
         this.authenticationEntryPoint = authenticationEntryPoint;  
     }  
   
-  
     @Bean  
 	@SneakyThrows
 	public SecurityFilterChain filterChain(HttpSecurity http) {  
-		// authenticationManager -> responsável pela autenticação dos usuários  
+		// authenticationManager -> responsável por gerenciar a autenticação dos usuários  
 		AuthenticationManagerBuilder authenticationManagerBuilder =  
                 http.getSharedObject(AuthenticationManagerBuilder.class);  
         authenticationManagerBuilder.userDetailsService(authService)  
@@ -467,20 +472,485 @@ public class WebSecurity {
                 //Filtro da Autorização - - sobrescreve o método padrão do Spring Security para Autorização.  
   .addFilter(new JWTAuthorizationFilter(authenticationManager, authService) )  
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);  //Como será criada uma API REST e todas as requisições que necessitam de autenticação/autorização serão realizadas com o envio do token JWT do usuário, não será necessário fazer controle de sessão no *back-end*.
-  
-  
-  
-  
         return http.build();  
     }  
   
-    @Bean  
-  public PasswordEncoder passwordEncoder() {  
+    @Bean // Criação do objeto utilizado na criptografia da senha, ele é usado no UserService ao cadastrar um usuário e pelo authenticationManagerBean para autenticar um usuário no sistema. 
+	public PasswordEncoder passwordEncoder() {  
         return new BCryptPasswordEncoder();  
     }  
 }
 ```
 
+Para autenticar-se em um sistema qualquer geralmente precisamos ter credenciais, no caso deste projeto as credenciais para acesso serão gerenciadas pela classe **User** por meio dos campos **username** e **password**. Dessa maneira os objetos instanciados de **User** serão armazenados no banco de dados e utilizados posteriormente para autenticação e autorização. O processo de salvar um novo usuário já foi explicado no início deste documento, já o processo de autenticação e autorização está sendo descrito agora. Por padrão, para autenticar-se em uma aplicação Spring Security é necessário realizar uma requisição do tipo **HTTP POST** para URL **/login**  (no caso dessa aplicação: http://localhost:8080/login), enviando no corpo da requisição os dados de usuário e senha.
+
+Agora serão descritas as configurações na classe **User**, **UserRepository** e a criação da classe **AuthUserService**. Como iremos utilizar o *framework* **Spring Security** para gerenciar a autenticação e autorização da API, deve-se obedecer a documentação do mesmo, que define que para utilizar uma classe criada na API a mesma deverá implementar a *interface* **UserDetails**. Essa *interface* exige a implementação de alguns métodos padrão , sendo os pricipais o **getUsername()**, o **getPassword()** e o **getAuthorities() **. O método **getUsername()** deve retornar o nome de usuário utilizado na autenticação (que pode ser outro campo da classe **User**, por exemplo, o campo email), nesse caso basta retornar **this.email** no método. O método **getPassword()** deverá retornar a senha e, por fim o método **getAuthorities() ** deverá retornar as permissões de usuário, nesse caso só teremos uma permissão, por isso o retorno é **return AuthorityUtils.createAuthorityList("Role_USER");**.
+
+```java
+\\...
+public class User implements UserDetails {  
+  
+    @Id 
+    @GeneratedValue 
+    private long id;  
+  
+    @UniqueUsername 
+    @NotNull(message = "{br.edu.utfpr.pb.pw25s.username}")  
+    @Size(min = 4, max = 255)  
+    private String username;  
+  
+    @NotNull  
+    private String displayName;  
+  
+    @NotNull  
+    @Size(min = 6, max = 254)  
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$")  
+    private String password;  
+  
+    @Override  
+    @Transient 
+    @JsonIgnore  
+    public Collection<? extends GrantedAuthority> getAuthorities() {  
+        return AuthorityUtils.createAuthorityList("Role_USER");  
+    }  
+  
+    @Override  
+    @Transient  
+    public boolean isAccountNonExpired() {  
+        return true;  
+    }  
+  
+    @Override  
+    @Transient  public boolean isAccountNonLocked() {  
+        return true;  
+    }  
+  
+    @Override  
+    @Transient  public boolean isCredentialsNonExpired() {  
+        return true;  
+    }  
+  
+    @Override  
+    @Transient  public boolean isEnabled() {  
+        return true;  
+    }  
+}
+```
+Os demais métodos: **isAccountNonExpired(), isAccountNonLocked**, etc. estão retornando **true** por padrão, pois o Spring Security utiliza esses dados para verificar se a conta de usuáriuo é válida. Nesse caso não foi implementado nenhum tipo de validação, mas esses métodos poderiam retornar valores armazenados no banco.
+
+Na interface **UserRepository** foi adicionadio a assinatura do método **findByUsername** que recebe como parâmetro o atributo **username** e retorna um objeto **User**. Esse método será utilizado para buscar o usuáriuo que está tentando autenticar-se no sistema.
+
+```java
+\\...
+@Repository  
+public interface UserRepository extends JpaRepository<User, Long> {  
+    User findByUsername(String username);  
+}
+```
+
+A classe **AuthUserService** implementa a interface do Spring Security **UserDetailsService**, a qual obriga a implementação do método **loadUserByUsername**, que recebe uma interface **username** por parâmetro e retorna um **UserDetails**, pois o Spring Security utiliza esse objeto para verificar se um usuário existe no banco. Caso exista o usuário o Spring Security irá comparar a senha criptografada no banco com a senha informada pelo usuário durante o processo de autenticação.
+
+```java
+\\...
+@Service  
+public class AuthUserService implements UserDetailsService {  
+	private final UserRepository userRepository;  
+	
+	public AuthUserService(UserRepository userRepository) {  
+        this.userRepository = userRepository;  
+    }  
+
+    @Override 
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username);
+        if(user == null) {
+            throw new UsernameNotFoundException("Usuário não encontrado!");
+        }
+        return user;
+    }  
+}
+```
+
+Conforme configurado na classe **WebSecurity** um filtro chamado **JWTAuthenticationFilter** será criado para realizar o processo de autenticação. Essa classe herda as características de **UsernamePasswordAuthenticationFilter** que é a classe do Spring Security que é utilizada para autenticação via usuário e senha. O método **attemptAuthentication** que foi sobrescrito é chamado quando o usuário realiza uma requisição **HTTP** do tipo **POST** para URL **/login**. Esse método recebe como parâmetros um objeto **HttpServletRequest ** que contém todos os dados da requisição, ou seja, é possível extrair do corpo da requisição o usuário e senha informado pelo usuário no momento da autenticação. Como está sendo utilizado JSON para transferência de dados entre o cliente e a API será necessário enviar os dados nesse formato ({"username":"user","password":"P4ssword"}). Esses dados são recuperados dentro do método. É realizada  uma consulta no banco de dados para verificar se o usuário existe, caso exista a senha informada durante a autenticação é comparada com a senha armazenada no banco de dados e no caso de sucesso o usuário será autenticado. No caso de falha uma Exception é gerada e o usuáriuo irá receber um erro **401**. No caso de sucesso será chamado o método **successfulAuthentication**, que também foi sobrescrito, para que seja gerado o **Token JWT** que será enviado para o cliente, assim o cliente poderá utilizar esse Token para realizar a autorização nas próximas requisições. O método **successfulAuthentication** recebe como parâmetro um objeto do tipo **HttpServletResponse** que é utilizado para enviar a resposta ao cliente que solicitou a autenticação. A aplição irá retornar como respostar um **Token JWT** por meio de um objeto do tipo **AuthenticationResponse** que foi criado para retornar apenas o Token para o cliente no formato JSON.
+
+```java
+public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {  
+  
+    private final AuthenticationManager authenticationManager;  
+    private final AuthService authService;  
+  
+    public JWTAuthenticationFilter(AuthenticationManager authenticationManager, AuthService authService) {  
+        this.authenticationManager = authenticationManager;  
+        this.authService = authService;  
+    }  
+  
+    @Override 
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {  
+        try {  
+	        //Obtem os dados de username e password utilizando o ObjectMapper para converter o JSON
+	        //em um objeto user com esses dados.
+            User credentials = new ObjectMapper().readValue(request.getInputStream(), User.class);  
+            //Verifica se o usuário existe no banco de dados, caso não exista uma Exception será disparada
+            //e o código será parado de executar nessa parte e o usuário irá receber uma resposta
+            //com falha na autenticação (classe: EntryPointUnauthorizedHandler)             
+            User user = (User) authService.loadUserByUsername(credentials.getUsername());  
+  
+			//Caso o usuário seja encontrado, o objeto authenticationManager encarrega-se de autenticá-lo.
+			//Como o authenticationManager foi configurado na classe WebSecurity e foi informado o método
+			//de criptografia da senha, a senha informada durante a autenticação é criptografada e
+			//comparada com a sennha armazenada no banco. Caso não esteja correta uma Exception será disparada
+			//Caso ocorra sucesso será chamado o método: successfulAuthentication dessa classe
+            return authenticationManager.authenticate(  
+                    new UsernamePasswordAuthenticationToken(  
+                            credentials.getUsername(),  
+                            credentials.getPassword(),  
+                            user.getAuthorities()  
+                    )  
+            );  
+        } catch (IOException e) {  
+            throw new RuntimeException(e);  
+        }  
+    }  
+  
+    @Override 
+    protected void successfulAuthentication(HttpServletRequest request,  
+                                            HttpServletResponse response,  
+                                            FilterChain chain,  
+                                            Authentication authResult) throws IOException, ServletException {  
+        String token = JWT.create() // o método cretate() da classe JWT é utilizado para criação de um novo token JWT  
+                .withSubject(authResult.getName())// o objeto authResult possui os dados do usuário autenticado, nesse caso o método getName() retorna o username do usuário foi autenticado no método attemptAuthentication.
+                .withExpiresAt(new Date(System.currentTimeMillis()+ SecurityConstants.EXPIRATION_TIME)) //a data de validade do token é a data atual mais o valor armazenado na constante EXPIRATION_TIME, nesse caso 1 dia
+                .sign(Algorithm.HMAC512(SecurityConstants.SECRET)); //Por fim é informado o algoritmo utilizado para assinar o token e por parâmetro a chave utilizada para assinatura. O Secret também pode ser alterado na classe SecurityConstants que armazena alguns dados de configuração do Spring Security 
+
+		
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);  
+        response.getWriter().write(new ObjectMapper().writeValueAsString(  
+                new AuthenticationResponse(token)  
+        ));  
+    }  
+}
+```
+Abaixo está o JSON que deverá ser enviado via **HTTP POST** para URL **/login** para autenticar-se na aplicação.
+```json
+	{"username":"user","password":"P4ssword"}
+```
+Abaixo está a resposta ao cliente após a autenticação realizada com sucesso.
+
+```json
+{"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.restante.dotoken"}
+```
+
+Com posse do Token recebido o cliente poderá realizar novas requisições ao servidor nas rotas que necessitam de autorização. Para isso basta enviar o Token no cabeçalho da requisição utilizando a chave **Authorization**.
+`Authorization:  Bearer  <token>`
+
+Entretanto, para que o Token sejá utilizado para autorizar no usuário nas novas requisições foi criada a classe **JWTAuthorizationFilter**, que será resposável por extrair o Token do cabeçalho da requisição **HTTP** e verificar se ele é válido. A classe herda de **BasicAuthenticationFilter ** e implementa o método **doFilterInternal**, esse método recebe como parâmetro um objeto do tipo HttpServletRequest, e é desse objeto que é extraído o token do cabeçalho da requisição. Após pegar o token do cabeçalho o mesmo é passado por parâmetro para o método **getAuthentication**, no qual é verificado a validade do token, então é recuperado o **username** que está  no corpo do token. Na sequência é verificado se o usuário que está tentando autorização ainda existe no banco de dados, caso exista o usuário é autorizado e a autorização é adicionada no contexto do Spring Security.
+
+```java
+public class JWTAuthorizationFilter extends BasicAuthenticationFilter {  
+  
+    private final AuthService authService;  
+  
+    public JWTAuthorizationFilter(AuthenticationManager authenticationManager,  
+                                  AuthService authService) {  
+        super(authenticationManager);  
+        this.authService = authService;  
+    }  
+  
+    @Override  
+    protected void doFilterInternal(HttpServletRequest request,  
+                                    HttpServletResponse response,  
+                                    FilterChain chain) throws IOException, ServletException {  
+        //Recuperar o token do Header(cabeçalho) da requisição
+        String header = request.getHeader(SecurityConstants.HEADER_STRING);  
+        //Verifica se o token existe no cabeçalho
+        if (header == null || !header.startsWith(SecurityConstants.TOKEN_PREFIX)) {  
+            chain.doFilter(request, response);  
+            return;  
+        }
+        //Chama o método getAuthentication e retorna o usuário autenticado para dar sequência na requisição
+        UsernamePasswordAuthenticationToken authenticationToken = getAuthentication(request);
+        
+        //Adiciona o usuário autenticado no contexto do spring security
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        chain.doFilter(request, response);  
+    }  
+  
+    private UsernamePasswordAuthenticationToken  
+                getAuthentication(HttpServletRequest request) {  
+        String token = request.getHeader(SecurityConstants.HEADER_STRING);  
+        if (token != null) {
+            //verifica se o token é válido e retorna o username  
+            String username =  
+                    JWT.require(Algorithm.HMAC512(SecurityConstants.SECRET))  
+                            .build()  
+                            .verify(token.replace(SecurityConstants.TOKEN_PREFIX, ""))  
+                            .getSubject();  
+            if (username != null) {
+                // com posse do username é verificado se ele existe na base de dados 
+                User user = (User) authService.loadUserByUsername(username);  
+                //caso exista o usuário é autenticado e a requisição continua a ser executada.
+                return new UsernamePasswordAuthenticationToken(username, null,  
+                                    user.getAuthorities());  
+            }  
+        }  
+        return null;  
+    }  
+}
+```
+Com o Token validado e o usuário autenticado e autorizado adicionado adicionado no contexto do Spring Security, qualquer **endpoint** da aplicação que necessite de autorização para acesso precisa ser acessado enviando o token gerado durante a autenticação.
+
+# Utilizando o Swagger para documentar a API e o Flyway para migração do banco de dados em um projeto SpringBoot
+
+## Swagger
+
+### Introdução
+
+O  [Swagger ](https://swagger.io/)  é um conjunto de ferramentas utilizados para melhorar o processo de documentação de APIs. Neste projeto foi utilizada a biblioteca [Springfox](https://springfox.github.io/springfox/) para gerar os JSONs com o mesmo padrão adotado pelo Swagger. A própria biblioteca Springfox é responsável por mapear todos os *endpoints* da API assim como todos os *models* utilizados nesses *endpoints* e gerar o JSON com a documentação da API.
+
+### Configurações iniciais
+
+Esse exemplo utiliza um projeto SpringBoot utilizando o Maven para gerenciamento das dependências. As bibliotecas serão adicionadas no arquivo  **pom.xml**. A biblioteca abaixo encontra-se no  [Repositório Maven](http://mvnrepository.com/) e é necessária para o funcionamento do Springfox.
+
+```xml
+	<dependency>  
+	   <groupId>io.springfox</groupId>  
+	   <artifactId>springfox-boot-starter</artifactId>  
+	   <version>3.0.0</version>  
+	</dependency>
+```
+
+Na sequência é necessário habilitar o Swagger na aplicação adicionando a anotação **@EnableSwagger2** na classe principal **ServerApplication**.
+
+```java
+@SpringBootApplication  
+@EnableSwagger2  
+public class ServerApplication {  
+	public static void main(String[] args) {  
+	    SpringApplication.run(ServerApplication.class, args);  
+	}
+}
+```
+
+O próximo passo é configurar os dados básicos para geração da documentação da API. Para isso foi criada a classe **SwaggerConfig** dentro do pacote **config** da aplicação. O método **greetingApi()** cria um objeto do tipo **Docket** no qual são configurados os dados básicos para geração da documentação da API, por exemplo o tipo que será gerada a documentação, nesse exemplo **Swagger 2**. Os métodos **apiKey(), securityContext() e defaultAuth()** são utilizados para configurar o envio do **token** de autenticação nas requisições da API. Os demais detalhes da documentação podem ser consultados na [documentação da biblioteca Springfox](http://springfox.github.io/springfox/docs/current/#quick-start-guides).
+
+```java
+@Configuration  
+@EnableSwagger2  
+public class SwaggerConfig implements WebMvcConfigurer {  
+	private ApiKey apiKey() {  
+        return new ApiKey("JWT", "Authorization", "header");  
+	}  
+  
+    private SecurityContext securityContext() {  
+        return SecurityContext.builder().securityReferences(defaultAuth()).build();  
+	}  
+  
+    private List<SecurityReference> defaultAuth() {  
+        AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");  
+  AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];  
+  authorizationScopes[0] = authorizationScope;  
+ return Arrays.asList(new SecurityReference("JWT", authorizationScopes));  
+  }  
+  
+    @Bean  
+  public Docket greetingApi() {  
+        Docket docket = new Docket(DocumentationType.SWAGGER_2)  
+                .securityContexts(Arrays.asList(securityContext()))  
+                .securitySchemes(Arrays.asList(apiKey()))  
+                .select()  
+                .apis(RequestHandlerSelectors.any())  
+                .paths(PathSelectors.any())  
+                .build()  
+                .apiInfo(metaData());  
+ return docket;  
+  }  
+  
+    private ApiInfo metaData() {  
+        return new ApiInfoBuilder()  
+                .title("Spring Boot REST API")  
+                .description("\"Spring Boot REST API for greeting people\"")  
+                .version("1.0.0")  
+                .license("Apache License Version 2.0")  
+                .licenseUrl("https://www.apache.org/licenses/LICENSE-2.0\"")  
+                .build();  
+  }  
+  
+    @Override  
+  public void addResourceHandlers(ResourceHandlerRegistry registry) {  
+        //enabling swagger-ui part for visual documentation  
+  registry.addResourceHandler("swagger-ui.html")  
+                .addResourceLocations("classpath:/META-INF/resources/");  
+  registry.addResourceHandler("/webjars/**")  
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");  
+  }   
+}
+```
+
+Outro item que deve ser cuidado é adicionar as regras para as URLs da documentação não serem bloqueadas pelo SpringSecurity. Para isso basta adicionar o código abaixo no método **filterChain** da classe **WebSecurity** que é responsável pelas configurações do SpringSecurity.
+
+```java
+	//...
+	@Bean  
+	@SneakyThrows  
+	public SecurityFilterChain filterChain(HttpSecurity http) {
+		//...
+			.antMatchers("/h2-console/**",  
+		        "/swagger-resources/**",  
+		        "/swagger-ui.html",  
+		        "/swagger-ui/**",  
+		        "/v2/api-docs",  
+		        "/webjars/**").permitAll()
+        //...
+	}
+	//...
+```
+
+### Funcionamento
+
+A biblioteca Springfox irá gerar automaticamente toda a documentação, para acessar o resultado da documentação no formato interface, no caso deste projeto, basta acessar: [http://localhost:8080/swagger-ui/](http://localhost:8080/swagger-ui/), serão listados todos os REST *controllers*, métodos HTTP presente em cada *controller* e também os *models* da aplicação. E para acessar a documentação no formato JSON basta acessar [http://localhost:8080/v2/api-docs](http://localhost:8080/v2/api-docs). Para fazer uma requisição basta acessar o **controller** escolher o método HTTP, clicar em **Try Out** e depois em **Execute**, caso seja uma requisição que dependa do envio de dados no corpo da requisição, o mesmo deverá ser preenchido no campo correspondente antes de clicar em **Execute**. Caso a o **endpoint** que será testado dependa de autenticação/autorização será necessário criar um usuário via *endpoint* para fazer o POST de um usuário, então executar o *endpoint* de autenticação (*login*), copiar o *token* que foi retorno da autenticação e clicar no botão **Authorize** na parte superior da página com a interface, na tela que abrir digitar o tipo do **token** e adicionar o **token** (ex.: Bearer ey.....restantedotokenjwtgerado).
+
+## Flyway
+
+### Introdução
+
+O  [Flyway](https://flywaydb.org/)  é uma biblioteca utilizada para migração de banco de dados. Qualquer alteração no *schema* do projeto podem facilmente ser controladas e auditadas utilizando o Flyway. Com as configurações padrão, durante a primeira execução da aplicação, é criada uma tabela automaticamente no banco de dados chamada  **flyway_schema_history**  em que serão armazenadas informações para o controle das versões do *schema* do projeto.
+
+### Configurações iniciais
+
+Esse exemplo utiliza um projeto SpringBoot utilizando o Maven para gerenciamento das dependências. As bibliotecas serão adicionadas no arquivo  **pom.xml**. A biblioteca abaixo encontra-se no  [Repositório Maven](http://mvnrepository.com/) e é necessária para o funcionamento do Flyway.
+
+```xml
+	<dependency>  
+	 <groupId>org.flywaydb</groupId>  
+	 <artifactId>flyway-core</artifactId>  
+	</dependency>
+```
+
+Na sequência será realizada a configuração na classe principal da aplicação **ServerApplication**.
+
+```java
+\\...
+@SpringBootApplication  
+@EnableSwagger2  
+public class ServerApplication {
+	\\...
+	@Bean  
+	public static BeanFactoryPostProcessor dependsOnPostProcessor() {  
+	   return bf -> {  
+		   // Let beans that need the database depend on the DatabaseStartupValidator  
+		   // like the JPA EntityManagerFactory or Flyway  String[] flyway = bf.getBeanNamesForType(Flyway.class);  
+	      Stream.of(flyway)  
+	            .map(bf::getBeanDefinition)  
+	            .forEach(it -> it.setDependsOn("databaseStartupValidator"));  
+	      String[] jpa = bf.getBeanNamesForType(EntityManagerFactory.class);  
+	      Stream.of(jpa)  
+	            .map(bf::getBeanDefinition)  
+	            .forEach(it -> it.setDependsOn("databaseStartupValidator"));  
+	   };  
+	}  
+	  
+	@Bean  
+	public DatabaseStartupValidator databaseStartupValidator(DataSource dataSource) {  
+	   var dsv = new DatabaseStartupValidator();  
+	   dsv.setDataSource(dataSource);  
+	   dsv.setTimeout(120);  
+	   dsv.setInterval(7);  
+	   // dsv.setValidationQuery(DatabaseDriver.POSTGRESQL.getValidationQuery());  
+	   dsv.afterPropertiesSet();  
+	   return dsv;  
+	}
+	\\...	
+}
+```
+
+
+O próximo passo é configurar as credenciais de acesso ao banco de dados no arquivo de configuração **application.yml**. O banco de dados utilizado neste exemplo foi o H2, mas pode ser alterado para utilizar qualquer outro SGBD (PostgreSQL, MongoDB, MySQL, MariaDB, Microsoft SQL Server, entre outros). O arquivo está dividido em *profiles* sendo que o profile ativo é o **dev** cada conjunto de '- - - ' delimita um profile.
+
+``` yml
+spring:  
+  profiles:  
+    active: dev  
+  datasource:  
+    generate-unique-name: false  
+ h2:  
+    console:  
+      enabled: true  
+ path: /h2-console  
+  jpa:  
+    properties:  
+      javax:  
+        persistence:  
+          validation:  
+            mode: none  
+      hibernate:  
+        format_sql: false  
+    show-sql: true  
+ data:  
+      web:  
+        pageable:  
+          default-page-size: 10  
+          max-page-size: 100  
+  flyway:  
+    baseline-on-migrate: true  
+ mvc:  
+    pathmatch:  
+      matching-strategy: ant_path_matcher  
+---  
+spring:  
+  config:  
+    activate:  
+      on-profile: prod  
+  datasource:  
+    url: jdbc:h2:mem:pw25s-dev  
+  jpa:  
+    hibernate:  
+      ddl-auto: none  
+  h2:  
+    console:  
+      enabled: false  
+ flyway:  
+    locations: classpath:/db/prod  
+---  
+spring:  
+  config:  
+    activate:  
+      on-profile: dev  
+  datasource:  
+    url: jdbc:h2:mem:pw25s-dev  
+  jpa:  
+    hibernate:  
+      ddl-auto: none  
+  flyway:  
+    locations: classpath:/db/dev  
+---  
+spring:  
+  config:  
+    activate:  
+      on-profile: test  
+  jpa:  
+    hibernate:  
+      ddl-auto: create-drop  
+  flyway:  
+    locations: classpath:/db/test
+   ```
+
+Após as configurações iniciais é necessário criar a pasta em que serão armazenados os scripts SQL para criação/alteração dos schemas. O caminho padrão é: **src/main/resources/db/migration**. Mas nesse projeto esse caminho foi editado no aquivo **application.yml**, sendo que para cada *profile* de execução foi criado um caminho diferente para armazenar os *scripts*. Por exemplo, **flyway: locations: classpath:/db/dev** é o caminho dos *scripts* para o *profile* **dev** utilizado para o desenvolvimento.
+
+Para nomear os arquivos de script deve ser adotado o padrão da biblioteca, o qual tambem possui uma ordem de execução, tudo está descrito na [documentação do Flyway](https://flywaydb.org/documentation/concepts/migrations.html#naming-1).
+
+### Funcionamento
+
+Após criados os arquivos de script SQL nos diretórios e nomeados conforme a documentação, será possível realizar a primeira migração, a qual contém o script inicial para criação do banco de dados. Executando o projeto as migrações serão executadas na ordem do versionamento e para cada script executado será adicionado um registro na tabela **flyway_schema_history**.
+
+A tabela **flyway_schema_history** contém uma chave primária, a versão do banco de dados, a descrição, o tipo do script (geralmente SQL), o nome do arquivo do script, o checksum do arquivo de script. Nessa tabela também é exibido o usuário do banco de dados que foi utilizado para executar o script, a data de execução, o tempo de execução e por fim um valor booleano indicando se a migração ocorreu com sucesso.
+
+O framework Flyway executa os passos abaixo para validar o banco de dados da aplicação:
+The framework performs the following steps to accommodate evolving database schemas:
+1. Verifica se o banco de dados possui a tabela  **flyway_schema_history**, caso ela não exista é criada.
+2.  Busca no classpath da aplicação por arquivos contendo migrações.
+3.  Compara cada arquivo de migração encontrado com os dados existentes na tabela de histório. Se o número de versão do arquivo for menor que o da última atualização existente no banco de dados, eles são ignorados.
+4.  Caso existam migrações para serem executadas o framework coloca em fila. As migrações são executadas da menor versão para maior.
+5.  Cada migração é executada e a tabela **flyway_schema_history** é atualizada.
 
 # Referências
 [1] Spring Framework, https://spring.io/.
