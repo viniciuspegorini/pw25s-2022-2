@@ -38,7 +38,7 @@ public class WebSecurity {
         authenticationManagerBuilder.userDetailsService(authService)
                 .passwordEncoder( passwordEncoder() );
         AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
-
+        http.headers().frameOptions().disable();
         http.csrf().disable()
                 .exceptionHandling()
                     .authenticationEntryPoint(authenticationEntryPoint)
