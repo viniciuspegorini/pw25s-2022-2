@@ -1,14 +1,8 @@
-import { ChangeEvent, useState } from 'react'
 import axios from 'axios';
+import { ChangeEvent, useState } from 'react'
 
-export function UserSignupPage() {
+export function LoginPage() {
     const [form, setForm] = useState({
-        displayName: '',
-        username: '',
-        password: '',
-    });
-    const [errors, setErrors] = useState({
-        displayName: '',
         username: '',
         password: '',
     });
@@ -21,49 +15,24 @@ export function UserSignupPage() {
                 [name]: value,
             }
         });
-
-        setErrors((previousErrors) => {
-            return {
-                ...previousErrors,
-                [name]: '',
-            }
-        });
     }
 
-    const onClickSignUp = () => {
-        const userSignUp = {
-            displayName: form.displayName,
+    const onClickLogin = () => {
+        const userLogin = {
             username: form.username,
             password: form.password,
         };
-        axios.post('http://localhost:8080/users', userSignUp)
+        axios.post('http://localhost:8080/login', userLogin)
             .then((response) => {
                 console.log(response);
             })
             .catch((errorResponse) => {
                 console.log(errorResponse);
-                if (errorResponse.response.data.validationErrors) {
-                    setErrors(errorResponse.response.data.validationErrors);
-                }
-        });
+            });
     }
-
     return (
         <div className="container">
-            <h1 className="text-center">Sign Up</h1>
-            <div className="col-12 mb-3">
-                <label>Informe seu nome</label>
-                <input
-                    type="text"
-                    className={errors.displayName ? "form-control is-invalid" : "form-control"}
-                    placeholder="Informe o seu nome"
-                    onChange={onChange}
-                    value={form.displayName}
-                    name="displayName"
-                />
-                {errors.displayName && 
-                    <div className="invalid-feedback">{errors.displayName}</div>}
-            </div>
+            <h1 className="text-center">Login</h1>
 
             <div className="col-12 mb-3">
                 <label>Informe seu usuário</label>
@@ -91,8 +60,9 @@ export function UserSignupPage() {
             <div className="text-center">
                 <button
                     className="btn btn-primary"
-                    onClick={onClickSignUp}>Cadastrar</button>
+                    onClick={onClickLogin}>Entrar</button>
             </div>
         </div>
     )
+
 }
