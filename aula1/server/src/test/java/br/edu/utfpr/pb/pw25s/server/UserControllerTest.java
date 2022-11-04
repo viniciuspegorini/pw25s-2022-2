@@ -39,10 +39,8 @@ public class UserControllerTest {
     @Test
     public void postUser_whenUserIsValid_receiveOk() {
         User user = createValidUser();
-
         ResponseEntity<Object> response =
                 testRestTemplate.postForEntity("/users", user, Object.class);
-
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -163,8 +161,6 @@ public class UserControllerTest {
         assertThat(response.getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
-
-
 
     private User createValidUser() {
         User user = new User();

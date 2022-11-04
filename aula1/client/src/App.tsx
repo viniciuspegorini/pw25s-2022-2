@@ -1,12 +1,12 @@
 import './App.css'
-import { LoginPage } from './pages/LoginPage'
-import { UserSignupPage } from './pages/UserSignUpPage'
+import { BaseRoutes } from './routes/BaseRoutes'
+import { SignRoutes } from './routes/SignRoutes'
 
 export function App() {
 
   return (
     <div>
-      <LoginPage />
+      <BaseRoutes />
     </div>
   )
 }

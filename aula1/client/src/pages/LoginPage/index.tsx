@@ -1,11 +1,14 @@
 import axios from 'axios';
 import { ChangeEvent, useState } from 'react'
+import { IUserLogin } from '../../commons/interfaces';
+import AuthService from '../../service/AuthService';
 
 export function LoginPage() {
     const [form, setForm] = useState({
         username: '',
         password: '',
     });
+    const [pendingApiCall, setPendingApiCall] = useState(false);
 
     const onChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { value, name } = event.target;
@@ -18,17 +21,22 @@ export function LoginPage() {
     }
 
     const onClickLogin = () => {
-        const userLogin = {
+        setPendingApiCall(true);
+
+        const userLogin: IUserLogin = {
             username: form.username,
             password: form.password,
         };
-        axios.post('http://localhost:8080/login', userLogin)
+        AuthService.login(userLogin)
             .then((response) => {
+                setPendingApiCall(false);
                 console.log(response);
             })
             .catch((errorResponse) => {
+                setPendingApiCall(false);
                 console.log(errorResponse);
             });
+
     }
     return (
         <div className="container">
@@ -59,8 +67,20 @@ export function LoginPage() {
 
             <div className="text-center">
                 <button
+                    disabled={pendingApiCall}
                     className="btn btn-primary"
-                    onClick={onClickLogin}>Entrar</button>
+                    onClick={onClickLogin}>
+                        
+{pendingApiCall && (
+    <div className="spinner-border text-light-spinner spinner-border-sm mr-sm-1"
+       role="status">
+        <span className="visually-hidden">Aguarde...</span>
+    </div>
+    )
+}
+                        
+                        Entrar
+                    </button>
             </div>
         </div>
     )

@@ -8,9 +8,7 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.util.Collection;
 
 @Data
@@ -23,11 +21,14 @@ public class User implements UserDetails {
     private long id;
 
     @UniqueUsername
-    @NotNull(message = "{br.edu.utfpr.pb.pw25s.username}")
+    @NotNull(message = "{br.edu.utfpr.pb.pw25s.username.NotNull}")
     @Size(min = 4, max = 255)
+    @NotEmpty
     private String username;
 
     @NotNull
+    @NotBlank
+    @Size(min = 4, max = 255)
     private String displayName;
 
     @NotNull

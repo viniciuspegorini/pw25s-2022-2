@@ -75,10 +75,12 @@ public class ServerApplication {
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/**")
 						.allowedOrigins("*")
-						.allowedMethods("GET","POST","PUT","PATCH","OPTIONS","DELETE")
-						.allowedHeaders("Authorization","x-xsrf-token", "Access-Control-Allow-Headers", "Origin",
-								"Accept", "X-Requested-With", "Content-Type", "Access-Control-Request-Method",
-								"Access-Control-Request-Headers", "Auth-Id-Token");
+			.allowedMethods("GET","POST","PUT","PATCH","OPTIONS","DELETE")
+			.allowedHeaders("Authorization","x-xsrf-token",
+					"Access-Control-Allow-Headers", "Origin",
+					"Accept", "X-Requested-With", "Content-Type",
+					"Access-Control-Request-Method",
+					"Access-Control-Request-Headers", "Auth-Id-Token");
 			}
 		};
 	}

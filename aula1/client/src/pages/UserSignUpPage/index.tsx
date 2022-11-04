@@ -1,5 +1,7 @@
 import { ChangeEvent, useState } from 'react'
 import axios from 'axios';
+import { IUserSignUp } from '../../commons/interfaces';
+import AuthService from '../../service/AuthService';
 
 export function UserSignupPage() {
     const [form, setForm] = useState({
@@ -31,21 +33,20 @@ export function UserSignupPage() {
     }
 
     const onClickSignUp = () => {
-        const userSignUp = {
+        const userSignUp: IUserSignUp = {
             displayName: form.displayName,
             username: form.username,
             password: form.password,
         };
-        axios.post('http://localhost:8080/users', userSignUp)
-            .then((response) => {
-                console.log(response);
-            })
+        AuthService.signup(userSignUp).then((response) => {
+            console.log(response);
+        })
             .catch((errorResponse) => {
                 console.log(errorResponse);
                 if (errorResponse.response.data.validationErrors) {
                     setErrors(errorResponse.response.data.validationErrors);
                 }
-        });
+            });
     }
 
     return (
@@ -61,7 +62,7 @@ export function UserSignupPage() {
                     value={form.displayName}
                     name="displayName"
                 />
-                {errors.displayName && 
+                {errors.displayName &&
                     <div className="invalid-feedback">{errors.displayName}</div>}
             </div>
 
