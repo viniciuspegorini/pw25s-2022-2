@@ -4,13 +4,16 @@ import br.edu.utfpr.pb.pw25s.server.error.ApiError;
 import br.edu.utfpr.pb.pw25s.server.model.User;
 import br.edu.utfpr.pb.pw25s.server.repository.UserRepository;
 import br.edu.utfpr.pb.pw25s.server.utils.GenericResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -161,6 +164,41 @@ public class UserControllerTest {
         assertThat(response.getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
+
+    @Test
+    public void patchUser_whenUserIsValid_receiveMessage() {
+        User user = createValidUser();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<User> entity = new HttpEntity<User>(user,
+                headers);
+
+
+        ResponseEntity<GenericResponse> response = testRestTemplate.exchange(
+                "/users?_method=patch", HttpMethod.POST, entity, GenericResponse.class);
+        assertThat( response.getBody().getMessage() ).isNotNull();
+
+    }
+
+    @Test
+    public void patchUser_whenUserIsValid_receiveMessageV2() {
+        User user = createValidUser();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<User> entity = new HttpEntity<User>(user,
+                headers);
+
+        RestTemplate patchRestTemplate  = testRestTemplate.getRestTemplate();
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        patchRestTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient));
+
+        ResponseEntity<GenericResponse> response = patchRestTemplate.exchange(
+                "/users", HttpMethod.PATCH, entity, GenericResponse.class);
+        assertThat( response.getBody().getMessage() ).isNotNull();
+    }
+
 
     private User createValidUser() {
         User user = new User();

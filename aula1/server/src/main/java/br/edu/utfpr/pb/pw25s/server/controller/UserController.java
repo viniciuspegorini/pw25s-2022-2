@@ -30,6 +30,12 @@ public class UserController {
         return new GenericResponse("Registro salvo");
     }
 
+    @PatchMapping
+    GenericResponse createUserPatch(@RequestBody @Valid User user) {
+        userService.save(user);
+        return new GenericResponse("Registro salvo");
+    }
+
     @GetMapping
     String getString() {
         return "O usuário está autenticado!";
