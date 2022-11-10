@@ -10,6 +10,8 @@ export function LoginPage() {
     password: "",
   });
   const [pendingApiCall, setPendingApiCall] = useState(false);
+  const [apiError, setApiError] = useState(false);
+
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value, name } = event.target;
@@ -32,9 +34,11 @@ export function LoginPage() {
       .then((response) => {
         localStorage.setItem("token", JSON.stringify(response.data.token));
         setPendingApiCall(false);
+        window.location.reload();
         console.log(response);
       })
       .catch((errorResponse) => {
+        setApiError(true);
         setPendingApiCall(false);
         console.log(errorResponse);
       });
@@ -66,6 +70,9 @@ export function LoginPage() {
           name="password"
         />
       </div>
+
+      {apiError && 
+        <div className="alert alert-danger">Falha ao efetuar login</div>}
 
       <div className="text-center">
         <ButtonWithProgress
