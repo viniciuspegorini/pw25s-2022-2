@@ -1,5 +1,7 @@
 import { ChangeEvent, useState } from "react";
+import { Link } from 'react-router-dom';
 import { IUserLogin } from "../../commons/interfaces";
+import { ButtonWithProgress } from '../../components/ButtonWithProgress';
 import AuthService from "../../service/AuthService";
 
 export function LoginPage() {
@@ -28,6 +30,7 @@ export function LoginPage() {
     };
     AuthService.login(userLogin)
       .then((response) => {
+        localStorage.setItem("token", JSON.stringify(response.data.token));
         setPendingApiCall(false);
         console.log(response);
       })
@@ -65,21 +68,16 @@ export function LoginPage() {
       </div>
 
       <div className="text-center">
-        <button
+        <ButtonWithProgress
           disabled={pendingApiCall}
           className="btn btn-primary"
           onClick={onClickLogin}
-        >
-          {pendingApiCall && (
-            <div
-              className="spinner-border text-light-spinner spinner-border-sm mr-sm-1"
-              role="status"
-            >
-              <span className="visually-hidden">Aguarde...</span>
-            </div>
-          )}
-          Entrar
-        </button>
+          pendingApiCall={pendingApiCall}
+          text="Entrar"
+        />
+      </div>
+      <div className="text-center">        
+        <Link className="btn btn-outline-secondary" to="/signup">Cadastrar novo usuário</Link>
       </div>
     </div>
   );
