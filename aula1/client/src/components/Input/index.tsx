@@ -1,6 +1,3 @@
-
-
-
 import { ChangeEvent } from 'react';
 
 interface IInputProps {
@@ -14,9 +11,6 @@ interface IInputProps {
     error: string;
     onChange: (event: ChangeEvent<HTMLInputElement>) => void;
 }
-
-
-
 
 export function Input(
     { name,

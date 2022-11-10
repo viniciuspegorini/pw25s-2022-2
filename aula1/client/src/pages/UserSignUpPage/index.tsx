@@ -1,5 +1,4 @@
 import { ChangeEvent, useState } from 'react'
-import axios from 'axios';
 import { IUserSignUp } from '../../commons/interfaces';
 import AuthService from '../../service/AuthService';
 import { Input } from '../../components/Input';

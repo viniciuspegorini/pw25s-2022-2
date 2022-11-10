@@ -76,7 +76,7 @@ export function LoginPage() {
           text="Entrar"
         />
       </div>
-      <div className="text-center">        
+      <div className="text-center">
         <Link className="btn btn-outline-secondary" to="/signup">Cadastrar novo usuário</Link>
       </div>
     </div>
