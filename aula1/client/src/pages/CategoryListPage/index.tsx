@@ -1,6 +1,35 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ICategory } from '../../commons/interfaces';
+import CategoryService from '../../service/CategoryService';
 
 export function CategoryListPage() {
+    const [data, setData] = useState([]);
+    const [apiError, setApiError] = useState(false);
+
+    useEffect(() => {
+        CategoryService.findAll()
+            .then((response) => {
+                setData(response.data);
+                setApiError(false);
+            })
+            .catch((responseError) => {
+                setApiError(true);
+            });
+    }, []);
+
+    const onClickRemove = (id?: number) => {
+        if (id) {
+            CategoryService.remove(id)
+                .then((response) => {
+
+                    setApiError(false);
+                })
+                .catch((responseError) => {
+                    setApiError(true);
+                });
+        }
+    }
 
     return (
         <div className="container">
@@ -10,6 +39,38 @@ export function CategoryListPage() {
                     Nova Categoria
                 </Link>
             </div>
+
+            <table className="table table-striped">
+                <thead>
+                    <tr>
+                        <td>#</td>
+                        <td>Nome</td>
+                        <td>Editar</td>
+                        <td>Remover</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((category: ICategory) => (
+                        <tr key={category.id}>
+                            <td>{category.id}</td>
+                            <td>{category.name}</td>
+                            <td>
+                                <Link className="btn btn-primary"
+                                    to={`/categories/${category.id}`}>
+                                    Editar
+                                </Link>
+                            </td>
+                            <td>
+                                <button className="btn btn-danger"
+                                    onClick={() => onClickRemove(category.id)}>
+                                    Remover
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
         </div>
     )
 }

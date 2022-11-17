@@ -1,11 +1,10 @@
-import { useContext } from "react";
 import { Link, NavLink } from "react-router-dom";
 import logo from "../../assets/utfpr-logo.png";
 import AuthService from "../../service/AuthService";
 
 export function NavBar() {
   const onClickLogout = () => {
-    //AuthService.logout();
+    AuthService.logout();
     window.location.reload();
   };
 

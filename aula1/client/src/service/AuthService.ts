@@ -15,12 +15,18 @@ const isAuthenticated = () => {
     if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${JSON.parse(token)}`;
     }
+    
     return token ? true : false;
+}
+
+const logout = () => {
+    localStorage.removeItem('token');
 }
 
 const AuthService = {
     signup,
     login,
     isAuthenticated,
+    logout,
 }
 export default AuthService;

@@ -84,8 +84,6 @@ export function CategoryFormPage() {
                     text="Salvar"
                 />
             </div>
-
-
         </div>
     )
 }
