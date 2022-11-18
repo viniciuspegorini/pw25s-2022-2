@@ -1,5 +1,5 @@
-import { ChangeEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ICategory } from '../../commons/interfaces';
 import { ButtonWithProgress } from '../../components/ButtonWithProgress';
 import { Input } from '../../components/Input';
@@ -18,6 +18,25 @@ export function CategoryFormPage() {
     const [pendingApiCall, setPendingApiCall] = useState(false);
     const [apiError, setApiError] = useState(false);
     const navigate = useNavigate();
+    const { id } = useParams();
+
+
+    useEffect(() => {
+        if (id) {
+            CategoryService.findById( parseInt(id) )
+                .then((response) => {
+                    if (response.data) {
+                        setForm({
+                            id: response.data.id,
+                            name: response.data.name,
+                        });
+                    }
+                })
+                .catch((responseError) => {
+                    setApiError(true);
+                });
+        }
+    },[]);
 
 
     const onChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +57,7 @@ export function CategoryFormPage() {
 
     const onSubmit = () => {
         const category: ICategory = {
+            id: form.id,
             name: form.name,
         }
         setPendingApiCall(true);

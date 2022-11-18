@@ -5,28 +5,32 @@ import CategoryService from '../../service/CategoryService';
 
 export function CategoryListPage() {
     const [data, setData] = useState([]);
-    const [apiError, setApiError] = useState(false);
+    const [apiError, setApiError] = useState("");
 
     useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = () => {
         CategoryService.findAll()
             .then((response) => {
                 setData(response.data);
-                setApiError(false);
+                setApiError("");
             })
             .catch((responseError) => {
-                setApiError(true);
+                setApiError("Falha ao carregar lista de categorias.");
             });
-    }, []);
+    }
 
     const onClickRemove = (id?: number) => {
         if (id) {
             CategoryService.remove(id)
                 .then((response) => {
-
-                    setApiError(false);
+                    loadData();
+                    setApiError("");
                 })
                 .catch((responseError) => {
-                    setApiError(true);
+                    setApiError("Falha ao remover o registro.");
                 });
         }
     }
@@ -70,7 +74,9 @@ export function CategoryListPage() {
                     ))}
                 </tbody>
             </table>
-
+            {apiError &&
+<div className="alert alert-danger">{apiError}</div>
+            }
         </div>
     )
 }

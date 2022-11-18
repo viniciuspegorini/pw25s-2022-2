@@ -6,6 +6,7 @@ import ProductService from "../../service/ProductService";
 export function ProductListPage() {
   const [data, setData] = useState<IProduct[]>([]);
   const [apiError, setApiError] = useState("");
+  const [showDeleteMessage, setShowDeleteMessage] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -25,7 +26,9 @@ export function ProductListPage() {
   const onRemove = (id: number) => {
     ProductService.remove(id)
       .then((response) => {
+        setShowDeleteMessage(true);
         loadData();
+        setTimeout(() => { setShowDeleteMessage(false) }, 1500);
         setApiError("");
       })
       .catch((erro) => {
@@ -78,6 +81,7 @@ export function ProductListPage() {
         </tbody>
       </table>
       {apiError && <div className="alert alert-danger">{apiError}</div>}
+      {showDeleteMessage && <div className="alert alert-success">Registro removido com sucesso!</div>}
     </div>
   );
 }
