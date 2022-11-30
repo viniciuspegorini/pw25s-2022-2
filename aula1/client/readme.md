@@ -76,7 +76,7 @@ export  function App() {
 }
 ```
 
-###### Cadastro de usuários
+##### Cadastro de usuários
 
 O próximo passo é iniciar o desenvolvimento dos componentes da aplicação. A aplicação que será desenvolvida irá consumir os recursos da API REST criada nas aulas sobre o lado servidor de uma aplicação Web. Logo o primeiro componente a ser desenvolvido será o cadastro de um novo usuário, para isso criar a pasta **/src/pages/UserSignUpPage**. Na pasta **pages** serão criados todos os componentes que serão renderizados ao usuário. Dentro da pasta **UserSignUpPage** criar o arquivo **index.jsx**, com o seguinte conteúdo  (comentários no código):
 
@@ -248,7 +248,8 @@ export  function App() {
 ```
 
 
-###### Autenticação
+##### Autenticação
+
 Com o processo de criação de um novo usuário finalizado, o próximo passo é permitir a autenticação no sistema, para isso será criado o componente **LoginPage** que vai conter o formulário para o usuário informar o seu **username** e **password**.
 
 ```ts
@@ -330,6 +331,808 @@ export  function LoginPage() {
 }
 ```
 
+O próximo passo é criar a função **login** no arquivo **AuthService.ts**. A interface  **IUserLogin ** deve ser adicionada no arquivo **interfaces.ts** dentro da pasta **commons**, contento os atribnutos *username* e *passowrd*.
+
+```ts
+export  interface  IUserLogin {
+	username: string;
+	password: string;
+}
+```
+
+```ts
+import { IUserLogin, IUserSignUp } from  '../commons/interfaces';
+import { api } from  '../lib/axios'
+
+const  signup = (user: IUserSignUp) => {
+	return  api.post('/users', user);
+}
+
+const  login = (user: IUserLogin) => {
+	return  api.post('/login', user);
+}
+
+const  AuthService = {
+	signup,
+	login,
+}
+
+export  default  AuthService;
+```
+Agora basta alterar o arquivo **App.tsx** do cliente para exibir o componente de **Login**.
+```ts
+import  './App.css'
+import { LoginPage } from './pages/LoginPage'
+
+export  function App() {
+	return (
+		<div>
+			<LoginPage />
+		</div>
+		)
+}
+```
+Para testar o componente de **Login** basta informar o **username** e **password** cadastrados pelo componente **UserSignUpPage**. Ao clicar no botão **Entrar** e abrindo o console do navegador será possível visualizar as mensagens de erro ou sucesso, pois no código foi adicionado o código `console.log(response);`.
+
+O código ainda está bem básico, será necessário adicionar mensagens de erro e sucesso e também criar uma maneira de navegar entre os diferentes componentes do sistema e, essa será o próximo conteúdo a ser abordado.
+
+##### Controle de Rotas
+
+Para controlar as rotas será utilizada a biblioteca React Router [5]. Inicialmente é necessário adicionar a dependência ao projeto utilizando o **npm**, basta abrir um terminal na pasta do projeto e executar:
+
+```cmd
+npm install react-router-dom
+```
+Com o React Router instalado o próximo passo é configurar as rotas da aplicação para os componentes que precisam de autenticação (CRUDs de categorias e produtos, que serão criados) e os que não precisam (cadastro de novos usuários e autenticação). Ante disso é necessário criar o ponto de partida para que o React Router controle as demais rotas do sistema, adicionando o **BrowserRouter** no código do arquivo **main.tsx**.
+
+```ts
+import  React  from  'react'
+import  ReactDOM  from  'react-dom/client'
+import { App } from  './App'
+import  './index.css'
+import { BrowserRouter } from  'react-router-dom';
+
+ReactDOM.createRoot(document.getElementById('root') as  HTMLElement).render(
+	<React.StrictMode>
+		<BrowserRouter>
+			<App  />
+		</BrowserRouter>
+	</React.StrictMode>
+)
+```
+
+Então, será criada uma pasta chamada **routes** e dentro três pastas **BaseRoutes**, **SignRoutes** e **AuthenticatedRoutes**, cada uma delas com um arquivo **index.tsx**.
+
+O componente **BaseRoutes** vai ser o ponto de entrada dos usuários e, caso o usuário não esteja autenticado ele será direcionado para o componente **SignRoutes** que irá conter as rotas para o cadastro e autenticação de usuários.
+
+```ts
+import  AuthService  from  '../../service/AuthService';
+import { AuthenticatedRoutes } from  '../AuthenticatedRoutes';
+import { SignRoutes } from  '../SignRoutes';
+
+export  function  BaseRoutes() {
+	const  isAuthenticated = AuthService.isAuthenticated();
+	return  isAuthenticated ? <AuthenticatedRoutes  /> : <SignRoutes  />;
+}
+```
+
+No **BaseRoutes** é verificado se o usuário está autenticado por meio da função **isAuthenticated()** do **AuthService**. A função apresentada abaixo utiliza o token *JWT* vindo da **API** no momento da autenticação. Durante o processo de autenticação o token é adicionado no `localStorage` e nesse momento recuperado para verificar se o usuário autenticou-se. Na sequência será apresentado o código modificado no componente **LoginPage** para que o token seja adicionado no `localStorage`. Na função **isAuthenticaded** está sendo adicionado o token nas configurações das requisições realizadas por meio do **axios**, no código `api.defaults.headers.common['Authorization'] = Bearer ${JSON.parse(token)};`, o token será adicionado ao cabeçalho, com isso, toda requisição HTTP enviará o token para o servidor.
+
+```ts
+const  isAuthenticated = () => {
+	const  token = localStorage.getItem('token');
+	if (token) {
+		api.defaults.headers.common['Authorization'] = `Bearer ${JSON.parse(token)}`;
+	}
+	return  token ? true : false;
+}
+```
+Foi modificado apenas a função  **onClickLogin** do componente **LoginPage** agora é possível realizar a autenticação, armazenar o token recebido no localStorage e então redirecionar o usuário para o componente com as rotas autenticadas.
+
+```ts
+	const  onClickLogin = () => {
+		setPendingApiCall(true);
+		const  userLogin: IUserLogin = {
+			username:  form.username,
+			password:  form.password,
+		};
+		AuthService.login(userLogin)
+			.then((response) => {
+				localStorage.setItem("token", JSON.stringify(response.data.token));
+				setPendingApiCall(false);
+				window.location.reload();
+			})
+			.catch((errorResponse) => {
+				setApiError(true);
+				setPendingApiCall(false);
+			});
+
+};
+```
+
+O componente **SignRoutes** contém as rotas em que o usuário não necessita estar autenticado. Nesse componente é iniciado o uso do React Router Dom por meio dos componentes **Routes** e **Route**. O **Routes** irá abrigar um conjunto de rotas e para cada componente que será apresentado para o usuário será criado uma rota por meio do componente **Route**. Esse, por sua vez, necessita de um atributo **path** que contém o caminho da rota, ou seja, a URL que será informada no navegador ao solicitar o novo componente e, o atributo **element** que contém o componente que será apresentado para o usuário. No código abaixo, a URL **/signup** por exemplo, irá apresentar o componente **UserSignupPage** ao usuário. Já a URL **/** ou qualquer outra rota, por causa do código: `<Route  path="*"  element={<LoginPage  />}  />` irá apresentar ao usuário o componente **LoginPage**.
+
+```ts
+import { Routes, Route } from  'react-router-dom';
+import { LoginPage } from  '../../pages/LoginPage';
+import { UserSignupPage } from  '../../pages/UserSignUpPage';
+
+export  function  SignRoutes() {
+
+	return (
+		<Routes>
+			<Route  path="/"  element={<LoginPage  />}  />
+			<Route  path="/signup"  element={<UserSignupPage  />}  />
+			<Route  path="*"  element={<LoginPage  />}  />
+		</Routes>
+	)
+}
+```
+
+O componente **AuthenticatedRoutes** irá  contém as rotas em que o usuário necessita estar autenticado. Nesse caso apenas o componente **HomePage**, o qual será apresentado na sequência do código.
+
+```ts
+import { Routes, Route } from  'react-router-dom'
+import { HomePage } from  '../../pages/HomePage'
+
+export  function  AuthenticatedRoutes() {
+	return (
+		<Routes>
+			<Route  path="/"  element={<HomePage  />}  />
+			<Route  path="*"  element={<HomePage  />}  />
+		</Routes>
+	)
+}
+```
+
+Dentro da pasta **pages** será criada a pasta **HomePage** com o arquivo **index.tsx**.
+
+```ts
+export  function  HomePage() {
+	return (
+		<div  className="container">
+			<h1>Bem vindo!</h1>
+		</div>
+	)
+}
+```
+##### CRUD de Categorias
+
+Com o cadastro de usuário e tela de autenticação funcionando serão adicionadas as operações CRUD de categoria. Inicialmente será criado o service de categoria dentro da pasta **service** criar o arquivo **CategoryService.ts**. Esse service vai ter as funções **save, 	findAll, remove e	findById**, todas utilizam o **axios** por meio do objeto **api**. Todas essas requisições necessitam de autenticação, entretanto, como o token já foi adicionado ao cabeçalho das requisições na função **isAuthenticaded**, não é necessário fazer isso novamente. 
+
+```ts
+import { ICategory } from  '../commons/interfaces';
+import { api } from  '../lib/axios'
+
+const  save = (category: ICategory) => {
+	return  api.post('/categories', category);
+}
+const  findAll = () => {
+	return  api.get('/categories');
+}
+const  remove = (id: number) => {
+	return  api.delete(`/categories/${id}`);
+}
+const  findById = (id: number) => {
+	return  api.get(`/categories/${id}`);
+}
+const  CategoryService = {
+	save,
+	findAll,
+	remove,
+	findById,
+}
+
+export  default  CategoryService;
+```
+Nesse service também pode ser observado o uso da interface **Category** a qual será criada no arquivo **interfaces** dentro da pasta **commons**.
+
+```ts
+export  interface  ICategory {
+	id?: number;
+	name: string;
+}
+```
+
+Agora será criado o componente para listar as categorias, dentro da pasta **page** será criada a pasta **CategoriaListPage** com o arquivo **index.tsx**. Esse componente vai carregar a lista de categorias cadastradas na API por meio da função `loadData()`, que é chamada uma vez no início do carregamento do componente por meio do hook **useEffect**[6]. O objeto **data** armazenado no state irá ser utilizado para exibir os dados de categoria para o usuário em uma tabela conforme comentários no código abaixo. A tela exibida ao usuário irá contar também com um botão para cadastrar uma nova categoria, o qual irá direcionar o usuário para a rota **/categories/new** que irá fazer o render do componente **CategoryFormPage** que será criado futuramente.  Na tabela de exibição dos dados serão apresentados dois botões: Editar e Remover. O botão Editar irá direcionar o usuário para o componente **CategoryFormPage** para que o mesmo possa editar a categoria. Já o botão Remover irá excluir a categoria do banco de dados.
+
+```ts
+import { useEffect, useState } from  'react';
+import { Link } from  'react-router-dom';
+import { ICategory } from  '../../commons/interfaces';
+import  CategoryService  from  '../../service/CategoryService';
+
+export  function  CategoryListPage() {
+	const [data, setData] = useState<ICategory[]>([]);
+	const [apiError, setApiError] = useState("");
+
+	useEffect(() => {
+		loadData();
+	}, []); // executado apenas no render do componente e carregando a lista de categorias.
+
+	const  loadData = () => {
+		//O método findAll do service faz chamada a API e retorna uma lista com todas as categorias cadastradas
+		CategoryService.findAll()
+			.then((response) => {
+				setData(response.data);
+				setApiError("");
+			})
+			.catch((responseError) => {
+				setApiError("Falha ao carregar lista de categorias.");
+			});
+	}
+	// A função de remover recebe o ID registro que será removido e faz uma requisição à API por meio do service de categoria. Em caso de sucesso carrega a lista novamente.
+	const  onClickRemove = (id?: number) => {
+		if (id) {
+			CategoryService.remove(id)
+				.then((response) => {
+					loadData();
+					setApiError("");
+				})
+				.catch((responseError) => {
+					setApiError("Falha ao remover o registro.");
+			});
+		}
+	}
+	return (
+		<div  className="container">
+			<h1  className="text-center">Lista de Categoria</h1>
+			<div  className="text-center">
+				<Link  className="btn btn-success" to="/categories/new">
+				Nova Categoria
+				</Link>
+			</div>
+			<table  className="table table-striped">
+				<thead>
+					<tr>
+						<td>#</td>
+						<td>Nome</td>
+						<td>Editar</td>
+						<td>Remover</td>
+					</tr>
+				</thead>
+				<tbody>
+				     {/* Percorrendo a lista de categorias para exibir os dados ao usuário */}
+					{data.map((category: ICategory) => (
+					<tr  key={category.id}>
+						<td>{category.id}</td>
+						<td>{category.name}</td>
+						<td>
+							<Link  className="btn btn-primary"
+								to={`/categories/${category.id}`}>
+								Editar
+							</Link>
+						</td>
+						<td>
+							<button  className="btn btn-danger" onClick={() =>  onClickRemove(category.id)}>
+							Remover
+							</button>
+						</td>
+					</tr>
+					))}
+				</tbody>
+			</table>
+			{apiError && <div  className="alert alert-danger">{apiError}</div>}
+		</div>
+	)
+}
+```
+
+Por fim, para exibir o componente **CategoryListPage** será adicionada a rota no arquivo **AuthenticatedRoutes**. E também será criado um menu por meio do componente **NavBar** que será exibido na sequência. O NavBar foi criado dentro da pasta components.
+
+```ts
+import { Routes, Route } from  'react-router-dom'
+import { HomePage } from  '../../pages/HomePage'
+
+export  function  AuthenticatedRoutes() {
+	return (
+		<Routes>
+			<Route  path="/"  element={<HomePage  />}  />
+			<Route  path="/categories"  element={<CategoryListPage  />}  />
+			<Route  path="*"  element={<HomePage  />}  />
+		</Routes>
+	)
+}
+```
+O componente **NavBar**  apresenta o link de acesso a cada um dos componentes de lista de dados que será criado. Inicialmente foi criado apenas a lista de categorias, os demais links irão redirecionar para o componente Home, por enquanto. As rotas são apresentadas no menu por meio do componente **NavLink** do **React Router**, esse componente permite alterar a classe para o link que está ativo, assim alterando a cor do menu para a rota selecionada pelo usuário. O componente também conta com o botão de Sair, que ao ser clicado será limpado o valor do token do local storage e o usuário será direcionado para tela de autenticação (LoginPage).
+```ts
+import { Link, NavLink } from  "react-router-dom";
+import logo from  "../../assets/utfpr-logo.png";
+import AuthService from  "../../service/AuthService";
+ 
+export  function NavBar() {
+	const onClickLogout = () => {
+		AuthService.logout();
+		window.location.reload();
+	};
+
+return (
+	<div  className="bg-white shadow-sm mb-2">
+		<div  className="container">
+			<nav  className="navbar navbar-light navbar-expand">
+				<Link  to="/"  className="navbar-brand">
+					<img  src={logo}  width="60"  alt="UTFPR"  />
+				</Link>
+				<ul  className="navbar-nav me-auto mb-2 mb-md-0">
+					<li  className="nav-item">
+						<NavLink  to="/" 
+							className={(navData) => navData.isActive ? "nav-link active" : "nav-link"}> Home
+						</NavLink>
+					</li>
+					<li  className="nav-item">
+						<NavLink to="/categories"
+							className={(navData) => navData.isActive ? "nav-link active" : "nav-link"}>Categorias
+						</NavLink>
+					</li>
+					<li  className="nav-item">
+						<NavLink to="/products"
+							className={(navData) => navData.isActive ? "nav-link active" : "nav-link"}>Produtos
+						</NavLink>
+					</li>
+					<li  className="nav-item">
+						<NavLink to="/product-v2"
+							className={(navData) =>navData.isActive ? "nav-link active" : "nav-link"}>Produtos V2
+						</NavLink>
+					</li>
+					<li  className="nav-item">
+						<button  className="btn btn-light"  onClick={onClickLogout}>&times; Sair
+						</button>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+	);
+}
+```
+Ao clicar no link que aponta para o componente de Categorias, será exibido o componente CategoryListPage, entretanto como não foi cadastrada nenhuma categoria, a tabela será exibida sem nenhum item. Para criar uma categoria será criado o componente **CategoryFormPage**, para isso criar a pasta **CategoryFormPage** dentro da pasta **pages** e dentro o arquivo **index.tsx**.
+
+```ts
+import { ChangeEvent, useEffect, useState } from  'react';
+import { useNavigate, useParams } from  'react-router-dom';
+import { ICategory } from  '../../commons/interfaces';
+import { ButtonWithProgress } from  '../../components/ButtonWithProgress';
+import { Input } from  '../../components/Input';
+import CategoryService from  '../../service/CategoryService';
+
+export  function CategoryFormPage() {
+	// Adiciona o objeto que irá armazenar a categoria no state
+	const [form, setForm] = useState<>({
+		id: undefined,
+		name: "",
+	});
+	// Adiciona o objeto que irá armazenar os erros de preenchimento da categoria no state
+	const [errors, setErrors] = useState({
+		id: undefined,
+		name: "",
+	});
+	// Utilizado para alterar a propriedade disable do botão durante a requisição à API
+	// Evitando que o usuário clique mais de uma vez no mesmo
+	const [pendingApiCall, setPendingApiCall] = useState(false);
+	// Caso ocorra algum erro durante a chamada da API ao servidor é valorizado como true
+	const [apiError, setApiError] = useState(false);
+	// Utilizado para direcionar o usuário para tela de lista de categiruas após salvo o registro com sucesso
+	const navigate = useNavigate();
+	// Recupera o ID da categoria da URL para carregar os dados da categoria para o usuário poder editar
+	const { id } = useParams();
+	
+	useEffect(() => {
+		if (id) { // Caso seja edição de uma categoria
+			CategoryService.findById( parseInt(id) ) //Carrega a categoria no state
+				.then((response) => {
+				if (response.data) {
+					setForm({
+						id: response.data.id,
+						name: response.data.name,
+					});
+				}
+			})
+			.catch((responseError) => {
+				setApiError(true);
+			});
+		}
+	},[]);
+
+	// Verifica as mudanças nos elementos do formulário para atualizar os valores do state
+	const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+		const { value, name } = event.target;
+		setForm((previousForm) => {
+			return {
+				...previousForm,
+				[name]: value,
+			}
+		});
+		setErrors((previousErrors) => {
+			return {
+				...previousErrors,
+				[name]: '',
+			}
+		});
+	}
+	 // Ao clicar no botão de submit recupera a categoria do state, crioa um objeto para ser enviado à API
+	const onSubmit = () => {
+		const category: ICategory = {
+			id: form.id,
+			name: form.name,
+		}
+		setPendingApiCall(true);
+		CategoryService.save(category) // Executa o método save que recebe a categoria a ser salva e retorna uma promessa
+			.then((response) => { //Em caso de sucesso retorna o usuário para lista de categorias
+				setPendingApiCall(false);
+				navigate('/categories');
+			})
+			.catch((responseError) => { // Em caso de erro exibe erro para os usuários na tela.
+				if (responseError.response.data.validationErrors) {
+					setErrors(responseError.response.data.validationErrors);
+				}
+				setPendingApiCall(false);
+				setApiError(true);
+			}
+		);
+	}
+	return (
+		<div  className="container">
+			<h1  className="text-center">Cadastro de Categoria</h1>
+			<div  className="col-12 mb-3">
+				<Input
+					className="form-control"
+					name="name"
+					label="Nome"
+					placeholder="Informe o nome"
+					type="text"
+					value={form.name}
+					onChange={onChange}
+					hasError={errors.name ? true : false}
+					error={errors.name}
+				/>
+			</div>
+			{apiError && <div  className="alert alert-danger">Falha ao cadastrar a categoria.</div>}
+			<div  className="text-center">			
+				<ButtonWithProgress
+					className="btn btn-primary"
+					onClick={onSubmit}
+					disabled={pendingApiCall ? true : false}
+					pendingApiCall={pendingApiCall}
+					text="Salvar"
+				/>
+			</div>
+		</div>
+	)
+}
+```
+
+##### CRUD de Produtos
+A lista e cadastro de produtos segue a mesma lógica dos componentes de categorias. Sendo os componentes **ProductListPage**, **ProductFormPage** e o service **ProductService** responsáveis pelo correto funcionamento dessas telas.
+
+#### Biblioteca para Formulário (React Hook Forms [7]), Interface Gráfica (Chakra UI [8]) e ícones (React Icons [9])
+
+Até o momento as únicas bibliotecas externas ao react que foram utilizadas para o desenvolvimento das funcionalidades foram o Axios para auxiliar nas requisições HTTP e o React Router para auxiliar na criação das rotas para exibição dos componentes. O próximo passo será utilizar a bibliteca **React Hook Form** para auxiliar no gerenciamento do preenchimento dos formulários e sua validação, a biblioteca **Chakra UI** que fornece componentes de interface gráfica para utilizarmos nos componentes desenvolvidos e, a biblioteca **React Icons** que fornece itens que podem ser utilizados nas interfaces exibidas aos usuários. Essas bibliotecas serão utilizadas nos componentes **ProductListPage** e **ProductFormPage**.
+
+Para instalar  a bibliteca **React Hook Form**, basta executar no terminal:
+
+```cmd
+npm i react-hook-form
+```
+Para instalar  a bibliteca **React Icons**, basta executar no terminal:
+
+```cmd
+npm i react-icons
+```
+
+E, para instalar  a bibliteca **Chakra UI** e suas dependências, basta executar no terminal:
+
+```cmd
+npm i @chakra-ui/react @emotion/react@^11 @emotion/styled@^11 framer-motion@^6
+```
+Depois de intalar o Chakra UI, é necessário adicionar o `ChakraProvider` na raiz da aplicação. Para isso, o componente **App.tsx** terá o seguinte conteúdo:
+
+```ts
+import { ChakraProvider } from  '@chakra-ui/react'
+import  './App.css'
+import { BaseRoutes } from  './routes/BaseRoutes'
+
+export  function App() {
+	return (
+		<ChakraProvider>
+		<BaseRoutes  />
+		</ChakraProvider>
+	)
+}
+```
+Agora é possível utilizar as funcionalidades disponíveis nesses bibliotecas nos componentes desenvolvidos. Abaixo está o código do componente **ProductListPageV2**, que exibe uma lista de produtos. Diferente dos componentes de lista anteiores, agora a tabela exibida não é mais uma tag HTML `<table>` e sim um componente do **Chakra UI** `<Table>`, que permite personalizações, por exemplo, o menu exibido com as ações de editar e remover, os quais também são componentes do Chakra UI e possuem ícones vindos do **React Icons**, como pode ser observado nas importações das dependências. 
+
+O processo para busca dos dados, por meio do **ProductService** e de criação da tabela, percorrendo a lista vinda da API, é semelhante ao componente de lista de categorias, mudando apenas o componente que será exibido ao usuário, nesse caso a `<Table>` do Chakra UI.
+
+```ts
+import { useState, useEffect } from  "react";
+import { Link, useNavigate } from  "react-router-dom";
+import ProductService from  "../../service/ProductService";
+import {Table,Thead,Tbody,Tfoot,Tr,Th,Td,TableCaption,TableContainer,Menu,MenuButton,MenuList,MenuItem,IconButton,} from  "@chakra-ui/react";
+import {BsThreeDotsVertical,BsPencilSquare,BsTrash,BsPlusCircle,} from  "react-icons/bs";
+import { IProduct } from  "../../commons/interfaces";
+
+export  function ProductListPageV2() {
+	const [data, setData] = useState<IProduct[]>([]);
+	const [apiError, setApiError] = useState("");
+	const navigate = useNavigate();
+	useEffect(() => {
+		loadData();
+	}, []);
+	const loadData = () => {
+		ProductService.findAll()
+			.then((response) => {
+				setData(response.data);
+				setApiError("");
+			})
+			.catch((error) => {
+				setApiError("Falha ao carregar a lista de produtos.");
+			});
+	}
+	const onEdit = (url: string) => {
+		navigate(url);
+	}
+	const onRemove = (id: number) => {
+		ProductService.remove(id)
+			.then((response) => {
+				loadData();
+				setApiError("");})
+			.catch((error) => {
+				setApiError("Falha ao remover o produto.");
+			});
+	}
+	return (
+		<div  className="container">
+			<h1  className="fs-2 mb-4 text-center">Lista de Produto V2</h1>
+			<div  className="text-center">
+				<Link className="btn btn-success btn-icon mb-3" to="/product-v2/new" title="Novo Produto" style={{ display: 'inline-block' }} >
+					<BsPlusCircle  style={{ display: 'inline-block' }}  /> Novo Produto
+				</Link>
+			</div>
+			<TableContainer>
+				<Table>
+					<TableCaption>Lista de Produtos</TableCaption>
+					<Thead>
+						<Tr>
+						<Th>#</Th>
+						<Th>Nome</Th>
+						<Th  isNumeric>Preço</Th>
+						<Th>Categoria</Th>
+						<Th>Ações</Th>
+					</Tr>
+				</Thead>
+				<Tbody>
+					{data.map((product: IProduct) => (
+					<Tr key={product.id} _hover={{ cursor: "pointer", background: "#eee" }}>
+						<Td>{product.id}</Td>
+						<Td>{product.name}</Td>
+						<Td  isNumeric>{product.price}</Td>
+						<Td>{product.category?.name}</Td>
+						<Td>
+							<Menu>
+								<MenuButton as={IconButton} aria-label="Actions" icon={<BsThreeDotsVertical  size={20}  />} variant="ghost"/>
+								<MenuList>
+									<MenuItem icon={<BsPencilSquare  />} onClick={() => onEdit(`/product-v2/${product.id}`)}>Editar
+									</MenuItem>
+									<MenuItem icon={<BsTrash  />} onClick={() => onRemove(product.id!)}>Remover</MenuItem>
+								</MenuList>
+							</Menu>
+						</Td>
+					</Tr>
+					))}
+				</Tbody>
+				<Tfoot>
+					<Tr>
+						<Th>#</Th>
+						<Th>Nome</Th>
+						<Th  isNumeric>Preço</Th>
+						<Th>Categoria</Th>
+						<Th>Ações</Th>
+					</Tr>
+				</Tfoot>
+			</Table>
+		</TableContainer>
+		{apiError && <div  className="alert alert-danger">{apiError}</div>}
+	</div>
+	)
+}
+```
+
+Já na tela de cadastro de produtos, o componente **ProductFormPageV2**, além dos componentes do Chakra UI e React Icons, também será utilizado o React Hook Form, para controlar o preenchimento do formulário e validação dos campos.
+
+```ts
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import {
+  FormErrorMessage,
+  FormLabel,
+  FormControl,
+  Input,
+  Textarea,
+  Select,
+  Button,
+} from "@chakra-ui/react";
+import CategoryService from "../../service/CategoryService";
+import ProductService from "../../service/ProductService";
+import { ICategory, IProduct } from "../../commons/interfaces";
+
+export function ProductFormPageV2() {
+  const {
+    handleSubmit, //controla o envio do formulário
+    register, //permite que o valor de um input esteja dispoível para a validação e envio do formulário ao servidor
+    formState: { errors, isSubmitting }, // conjunto de erros de preenchimento do formulário, e situação de envio do formulário
+    reset, //Atualiza o formulário de acordo com o conjunto de dados passados por parâmetro
+  } = useForm<IProduct>();
+  const [apiError, setApiError] = useState("");
+  const navigate = useNavigate();
+  // Recupera da URL o código do produto que será editado
+  const { id } = useParams();
+  // Lista de categorias utilizada no campo de seleção
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  // Utilizado para atualizar o formulário na edição de um produto
+  const [entity, setEntity] = useState<IProduct>({
+    id: undefined,
+    name: "",
+    price: 0,
+    description: "",
+    category: { id: undefined, name: "" },
+  });
+
+  useEffect(() => {
+    CategoryService.findAll() //Carrega a lista de categorias
+      .then((response) => {
+        setCategories(response.data);
+        if (id) { // no caso de edição, carrega o produto a ser editado
+          ProductService.findOne(parseInt(id))
+            .then((response) => {
+              if (response.data) {
+                setEntity({
+                  id: response.data.id,
+                  name: response.data.name,
+                  price: response.data.price,
+                  description: response.data.description,
+                  category: response.data.category.id,
+                });
+                setApiError("");
+              } else {
+                setApiError("Falha ao carregar o produto.");
+              }
+            })
+            .catch((error) => {
+              setApiError("Falha ao carregar o produto.");
+            });
+        } else {
+          setEntity((previousEntity) => {
+            return {
+              ...previousEntity,
+              category: response.data[0]?.id, // caso não seja edição, atribui no form id da primeira categoria, evitando enviar valor nulo.
+            };
+          });
+        }
+        setApiError("");
+      })
+      .catch((error) => {
+        setApiError("Falha ao carregar a lista de categorias.");
+      });
+  }, [id]);
+
+  useEffect(() => { //atualiza o form com os dados do produto ao editá-lo
+    reset(entity);
+  }, [entity, reset]);
+
+  //envio dos dados ao servidor
+  const onSubmit = (data: IProduct) => {
+    const product: IProduct = {
+      ...data,
+      id: entity.id,
+      category: { id: data.category.id, name: "" },
+    };
+    ProductService.save(product)
+      .then((response) => {
+        navigate("/product-v2");
+      })
+      .catch((error) => {
+        setApiError("Falha ao salvar o produto.");
+      });
+  };
+  return (
+    <div className="container">
+      <h1 className="fs-2 text-center">Cadastro de Produto - V2s</h1>
+      {/*ao clicar no botão submit será chamado o método onSubmit*/}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        {/*Caso exista erro na propriedade name, vai atualizar a visualização do componente na tela*/}
+        <FormControl isInvalid={errors.name && true}>
+          <FormLabel htmlFor="name">Nome</FormLabel>
+          {/*o register vincula o atributo name a esse Input, juntamente com a validação de campo obrigatório, o procedimento é o mesmo para os demais campos.*/}
+          <Input
+            id="name"
+            placeholder="Nome do produto"
+            {...register("name", {
+              required: "O campo nome é obrigatório",
+            })}
+          />
+          {/*Caso tenha erro no campos nome, a mensagem será exibida*/}
+          <FormErrorMessage>
+            {errors.name && errors.name.message}
+          </FormErrorMessage>
+        </FormControl>
+        <FormControl isInvalid={errors.price && true}>
+          <FormLabel htmlFor="price">Preço</FormLabel>
+          <Input
+            id="price"
+            placeholder="0.0"
+            {...register("price", {
+              required: "O campo preço é obrigatório",
+              min: { value: 0.01, message: "O valor deve ser maior que zero" },
+            })}
+            type="number"
+            step="any"
+          />
+
+          <FormErrorMessage>
+            {errors.price && errors.price.message}
+          </FormErrorMessage>
+        </FormControl>
+        <FormControl isInvalid={errors.description && true}>
+          <FormLabel htmlFor="description">Descrição</FormLabel>
+          <Textarea
+            id="description"
+            placeholder="Descrição do produto"
+            {...register("description", {
+              required: "O campo descrição é obrigatório",
+              minLength: {
+                value: 2,
+                message: "O tamanho deve ser entre 2 e 1024 caracteres",
+              },
+              maxLength: {
+                value: 1024,
+                message: "O tamanho deve ser entre 2 e 1024 caracteres",
+              },
+            })}
+            size="sm"
+          />
+          <FormErrorMessage>
+            {errors.description && errors.description.message}
+          </FormErrorMessage>
+        </FormControl>
+        <FormControl isInvalid={errors.category && true}>
+          <FormLabel htmlFor="category">Categoria</FormLabel>
+          <Select
+            id="category"
+            {...register("category.id", {
+              required: "O campo categoria é obrigatório",
+            })}
+            size="sm"
+          >
+            {categories.map((category: ICategory) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </Select>
+          <FormErrorMessage>
+            {errors.description && errors.description.message}
+          </FormErrorMessage>
+        </FormControl>
+        <div className="text-center">
+          <Button
+            mt={4}
+            colorScheme="teal"
+            isLoading={isSubmitting}
+            type="submit"
+          >
+            Salvar
+          </Button>
+        </div>
+      </form>
+      {apiError && <div className="alert alert-danger">{apiError}</div>}
+      <div className="text-center">
+        <Link to="/product-v2">Voltar</Link>
+      </div>
+    </div>
+  );
+}
+```
 
 # Referências
 
@@ -337,6 +1140,16 @@ export  function LoginPage() {
 
 [2] Vite. Disponível em: https://vitejs.dev/
 
-[3] https://reactjs.org/docs/state-and-lifecycle.html
+[3] React. Disponível em: https://reactjs.org/docs/state-and-lifecycle.html
 
-[4] https://reactjs.org/docs/hooks-intro.html
+[4] React Hooks. Disponível em: https://reactjs.org/docs/hooks-intro.html
+
+[5] React Router Dom. Disponível em: https://reactrouter.com/
+
+[6] useEffect. Disponível em: https://reactjs.org/docs/hooks-effect.html
+
+[7] React Hook Form. Disponível em: https://react-hook-form.com/
+
+[8] Chakra UI. Disponível em: https://chakra-ui.com/
+
+[9] React Icons. Disponível em: https://react-icons.github.io/react-icons/
